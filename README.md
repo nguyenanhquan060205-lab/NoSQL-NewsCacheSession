@@ -24,6 +24,6 @@ Yêu cầu: MongoDB và Redis đang chạy local (mặc định `localhost:27017
 ## Phân công
 | Thành viên | Vai trò |
 |---|---|
-| Quan | Data Architect & CRUD Lead |
-| ??? | Advanced Query Specialist (Cache-Aside, TTL, Invalidation, INCR) |
-| ??? | Fullstack Integrator & DB Tester |
+|  | Data Architect & CRUD Lead |
+|  | Advanced Query Specialist (Cache-Aside, TTL, Invalidation, INCR) |
+|  | Fullstack Integrator & DB Tester |
