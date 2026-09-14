@@ -8,12 +8,17 @@ Trang tin tức tích hợp Redis để cache bài viết và quản lý phiên 
 - Redis (StackExchange.Redis) — Cache-Aside + Session (Hash, TTL, INCR)
 
 ## Cách chạy
-```bash
-cd src/NewsCacheSession.Api
-dotnet run
-```
 
-Yêu cầu: MongoDB và Redis đang chạy local (mặc định `localhost:27017` và `localhost:6379`).
+```bash
+# 1. Khởi động DB & Cache: MongoDB (27017), Redis (6379), RedisInsight (5540)
+docker compose up -d
+
+# 2. Chạy Backend API (Swagger: http://localhost:5134/swagger)
+cd src/NewsCacheSession.Api && dotnet run
+
+# 3. Chạy Frontend (UI: http://localhost:3000)
+cd src/frontend && npm run dev
+```
 
 ## Cấu trúc thư mục
 - `src/NewsCacheSession.Api/` — project API chính
