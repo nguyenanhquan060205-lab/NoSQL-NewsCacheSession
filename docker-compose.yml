@@ -1,0 +1,48 @@
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: news-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - news-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: news-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - news-network
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: news-redisinsight
+    restart: always
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight_data:/data
+    depends_on:
+      - redis
+    networks:
+      - news-network
+
+volumes:
+  mongo_data:
+    driver: local
+  redis_data:
+    driver: local
+  redisinsight_data:
+    driver: local
+
+networks:
+  news-network:
+    driver: bridge
