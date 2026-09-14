@@ -20,6 +20,7 @@ public class MongoContext
         _database = client.GetDatabase(settings.Value.DatabaseName);
     }
 
+    public IMongoDatabase Database => _database;
     public IMongoCollection<Post> Posts => _database.GetCollection<Post>("posts");
     public IMongoCollection<User> Users => _database.GetCollection<User>("users");
 }
