@@ -35,10 +35,16 @@ Database dùng 3 collection: `users`, `categories`, `articles`.
   "author_id": "ObjectId, ref users",
   "status": "draft | published",
   "views": "integer, default 0",
+  "is_deleted": "boolean, default false",
+  "deleted_at": "datetime | null",
   "created_at": "datetime",
   "updated_at": "datetime"
 }
 ```
+
+`is_deleted` và `deleted_at` phục vụ cơ chế soft delete: API xóa chỉ đánh dấu bài
+viết đã bị xóa, không xóa vật lý document khỏi MongoDB. Các truy vấn đọc phải lọc
+`is_deleted != true` để tương thích với dữ liệu cũ chưa có trường này.
 
 ## Index cần tạo
 | Collection | Field | Loại | Lý do |

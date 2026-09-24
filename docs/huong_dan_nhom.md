@@ -850,20 +850,38 @@ public async Task<IActionResult> Create([FromBody] CreatePostRequest request)
 }
 ```
 
-#### Endpoint: `DELETE /api/posts/{id}` (Xóa bài + Cache Invalidation)
+#### Endpoint: `DELETE /api/posts/{id}` (Soft Delete + Cache Invalidation)
 
 ```csharp
 [HttpDelete("{id}")]
 public async Task<IActionResult> Delete(string id)
 {
-    var result = await _mongo.Posts.DeleteOneAsync(p => p.Id == id);
+    if (!ObjectId.TryParse(id, out var objectId))
+        return BadRequest(new { message = "ID bài viết không hợp lệ." });
 
-    if (result.DeletedCount == 0)
-        return NotFound();
+    var filter = Builders<Post>.Filter.And(
+        new BsonDocument("_id", objectId),
+        new BsonDocument("$or", new BsonArray
+        {
+            new BsonDocument("IsDeleted", false),
+            new BsonDocument("IsDeleted", new BsonDocument("$exists", false))
+        }));
 
-    // Cache Invalidation — xóa cache cũ
-    await _cacheService.RemoveAsync(CachePrefix + id);
-    await _cacheService.RemoveAsync(ViewsPrefix + id);
+    var now = DateTime.UtcNow;
+    var update = Builders<Post>.Update
+        .Set(p => p.IsDeleted, true)
+        .Set(p => p.DeletedAt, now)
+        .Set(p => p.UpdatedAt, now);
+
+    var result = await _mongo.Posts.UpdateOneAsync(filter, update);
+
+    if (result.MatchedCount == 0)
+        return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
+
+    // Cache Invalidation — xóa nội dung và bộ đếm cũ trong Redis
+    await Task.WhenAll(
+        _cacheService.RemoveAsync(CachePrefix + id),
+        _cacheService.RemoveAsync(ViewsPrefix + id));
 
     return NoContent();
 }

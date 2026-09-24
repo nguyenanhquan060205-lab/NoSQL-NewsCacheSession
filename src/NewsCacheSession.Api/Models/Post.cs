@@ -14,6 +14,8 @@ public class Post
     public string? ImageUrl { get; set; }
     public string? AuthorId { get; set; }
     public int Views { get; set; } = 0;
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

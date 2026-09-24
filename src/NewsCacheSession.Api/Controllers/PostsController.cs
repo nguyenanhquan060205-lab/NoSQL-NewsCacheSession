@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using NewsCacheSession.Api.Data;
 using NewsCacheSession.Api.DTOs.Posts;
+using NewsCacheSession.Api.Models;
 using NewsCacheSession.Api.Services;
 
 namespace NewsCacheSession.Api.Controllers;
@@ -98,18 +101,45 @@ public class PostsController : ControllerBase
     }
 
     /// <summary>
-    /// Xóa bài viết — xóa khỏi MongoDB rồi ⭐ xóa Cache (Cache Invalidation).
+    /// Xóa mềm bài viết trong MongoDB rồi ⭐ xóa Cache (Cache Invalidation).
     /// </summary>
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        // TODO [SV1]: Implement xóa bài viết + Cache Invalidation
-        // 1. Xóa post theo id trong MongoDB
-        // 2. ⭐ Cache Invalidation: await _cacheService.RemoveAsync(CachePrefix + id);
-        // 3. Xóa luôn view count: await _cacheService.RemoveAsync(ViewsPrefix + id);
-        // 4. Trả về 204 NoContent
+        if (!ObjectId.TryParse(id, out var objectId))
+        {
+            return BadRequest(new { message = "ID bài viết không hợp lệ." });
+        }
 
-        throw new NotImplementedException();
+        // Ghép filter BSON tường minh để vừa khớp _id kiểu ObjectId, vừa hỗ trợ
+        // các document cũ chưa có field IsDeleted.
+        var filter = Builders<Post>.Filter.And(
+            new BsonDocument("_id", objectId),
+            new BsonDocument("$or", new BsonArray
+            {
+                new BsonDocument("IsDeleted", false),
+                new BsonDocument("IsDeleted", new BsonDocument("$exists", false))
+            }));
+
+        var now = DateTime.UtcNow;
+        var update = Builders<Post>.Update
+            .Set(post => post.IsDeleted, true)
+            .Set(post => post.DeletedAt, now)
+            .Set(post => post.UpdatedAt, now);
+
+        var result = await _mongo.Posts.UpdateOneAsync(filter, update);
+        if (result.MatchedCount == 0)
+        {
+            return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
+        }
+
+        // Cache-Aside: sau khi DB gốc thay đổi, xóa ngay dữ liệu Redis liên quan
+        // để request tiếp theo không đọc lại nội dung hoặc bộ đếm đã cũ.
+        await Task.WhenAll(
+            _cacheService.RemoveAsync(CachePrefix + id),
+            _cacheService.RemoveAsync(ViewsPrefix + id));
+
+        return NoContent();
     }
 
     /// <summary>
