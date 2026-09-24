@@ -11,4 +11,7 @@ public class UpdatePostRequest
     public string Content { get; set; } = string.Empty;
 
     public string? ImageUrl { get; set; }
+
+    /// <summary>ObjectId của chuyên mục (tuỳ chọn).</summary>
+    public string? CategoryId { get; set; }
 }

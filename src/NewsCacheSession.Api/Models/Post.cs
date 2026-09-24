@@ -10,8 +10,13 @@ public class Post
     public string Id { get; set; } = string.Empty;
 
     public string Title { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
+
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? CategoryId { get; set; }
+
     public string? AuthorId { get; set; }
     public int Views { get; set; } = 0;
     public bool IsDeleted { get; set; } = false;
