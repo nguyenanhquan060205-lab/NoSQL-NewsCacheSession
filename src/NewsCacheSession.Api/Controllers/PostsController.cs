@@ -196,20 +196,26 @@ public class PostsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        if (!ObjectId.TryParse(id, out var objectId))
+        var userId = await GetCurrentUserIdAsync();
+        if (userId == null)
+            return Unauthorized(new { message = "Bạn cần đăng nhập để xóa bài viết." });
+
+        if (!ObjectId.TryParse(id, out _))
         {
             return BadRequest(new { message = "ID bài viết không hợp lệ." });
         }
 
-        // Ghép filter BSON tường minh để vừa khớp _id kiểu ObjectId, vừa hỗ trợ
-        // các document cũ chưa có field IsDeleted.
-        var filter = Builders<Post>.Filter.And(
-            new BsonDocument("_id", objectId),
-            new BsonDocument("$or", new BsonArray
-            {
-                new BsonDocument("IsDeleted", false),
-                new BsonDocument("IsDeleted", new BsonDocument("$exists", false))
-            }));
+        var filter = NotDeleted & Builders<Post>.Filter.Eq(p => p.Id, id);
+        var post = await _mongo.Posts.Find(filter).FirstOrDefaultAsync();
+        if (post == null)
+        {
+            return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
+        }
+
+        if (!CanModify(post, userId))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Bạn không có quyền xóa bài viết này." });
+        }
 
         var now = DateTime.UtcNow;
         var update = Builders<Post>.Update
