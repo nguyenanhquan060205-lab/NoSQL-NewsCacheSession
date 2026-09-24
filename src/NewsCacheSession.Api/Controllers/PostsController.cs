@@ -20,6 +20,8 @@ public class PostsController : ControllerBase
     private const string ViewsPrefix = "post_views:";
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
 
+    private const int MaxPageSize = 50;
+
     // Bài viết chưa bị xóa mềm. Dùng Ne(true) để khớp cả document cũ chưa có field IsDeleted.
     private static readonly FilterDefinition<Post> NotDeleted =
         Builders<Post>.Filter.Ne(p => p.IsDeleted, true);
@@ -31,17 +33,41 @@ public class PostsController : ControllerBase
     }
 
     /// <summary>
-    /// Lấy danh sách bài viết (từ MongoDB, có phân trang).
+    /// Lấy danh sách bài viết (từ MongoDB, có phân trang + lọc theo chuyên mục).
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? categoryId = null)
     {
-        // TODO [SV1]: Implement lấy danh sách bài viết
-        // 1. Query _mongo.Posts với Skip/Limit để phân trang
-        // 2. Map sang List<PostResponse>
-        // 3. Trả về 200 OK kèm danh sách
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
-        throw new NotImplementedException();
+        var filter = NotDeleted;
+        if (!string.IsNullOrWhiteSpace(categoryId))
+        {
+            if (!ObjectId.TryParse(categoryId, out _))
+                return BadRequest(new { message = "ID chuyên mục không hợp lệ." });
+
+            filter &= Builders<Post>.Filter.Eq(p => p.CategoryId, categoryId);
+        }
+
+        var totalItems = await _mongo.Posts.CountDocumentsAsync(filter);
+        var posts = await _mongo.Posts.Find(filter)
+            .SortByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync();
+
+        return Ok(new PagedPostsResponse
+        {
+            Items = posts.Select(PostResponse.FromModel).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = totalItems,
+            TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
+        });
     }
 
     /// <summary>

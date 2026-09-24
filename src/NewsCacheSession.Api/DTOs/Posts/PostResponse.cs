@@ -9,6 +9,7 @@ public class PostResponse
     public string Slug { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
+    public string? CategoryId { get; set; }
     public string? AuthorId { get; set; }
     public int Views { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -21,6 +22,7 @@ public class PostResponse
         Slug = post.Slug,
         Content = post.Content,
         ImageUrl = post.ImageUrl,
+        CategoryId = post.CategoryId,
         AuthorId = post.AuthorId,
         Views = post.Views,
         CreatedAt = post.CreatedAt,
