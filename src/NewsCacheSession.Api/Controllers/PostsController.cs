@@ -20,6 +20,10 @@ public class PostsController : ControllerBase
     private const string ViewsPrefix = "post_views:";
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
 
+    // Bài viết chưa bị xóa mềm. Dùng Ne(true) để khớp cả document cũ chưa có field IsDeleted.
+    private static readonly FilterDefinition<Post> NotDeleted =
+        Builders<Post>.Filter.Ne(p => p.IsDeleted, true);
+
     public PostsController(MongoContext mongo, ICacheService cacheService)
     {
         _mongo = mongo;
@@ -38,6 +42,20 @@ public class PostsController : ControllerBase
         // 3. Trả về 200 OK kèm danh sách
 
         throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Lấy chi tiết bài viết theo slug (đọc thẳng MongoDB, chưa cache).
+    /// </summary>
+    [HttpGet("slug/{slug}")]
+    public async Task<IActionResult> GetBySlug(string slug)
+    {
+        var filter = NotDeleted & Builders<Post>.Filter.Eq(p => p.Slug, slug.ToLowerInvariant());
+        var post = await _mongo.Posts.Find(filter).FirstOrDefaultAsync();
+        if (post == null)
+            return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
+
+        return Ok(PostResponse.FromModel(post));
     }
 
     /// <summary>
