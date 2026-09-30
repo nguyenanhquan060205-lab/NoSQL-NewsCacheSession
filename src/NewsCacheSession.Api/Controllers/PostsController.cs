@@ -19,10 +19,17 @@ public class PostsController : ControllerBase
     private readonly ICacheService _cacheService;
     private readonly ISessionService _sessionService;
 
-    // Cache key prefix & TTL mặc định
-    private const string CachePrefix = "post:";
-    private const string ViewsPrefix = "post_views:";
+    // ===== Hợp đồng keyspace Redis — xem docs/redis-keyspace.md =====
+    // Mọi key liên quan bài viết nằm chung namespace "post:" / "posts:" để SCAN gom được hết.
+    private const string CachePrefix = "post:";              // post:{id}         — String JSON, TTL 10 phút
+    private const string ListCachePrefix = "posts:cat:";     // posts:cat:{catId}:p{n} — SV2 (SCRUM-26)
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
+
+    /// <summary>Key cache nội dung bài viết: <c>post:{id}</c>.</summary>
+    private static string CacheKey(string id) => CachePrefix + id;
+
+    /// <summary>Key bộ đếm lượt xem (INCR, không TTL): <c>post:{id}:views</c>.</summary>
+    private static string ViewsKey(string id) => $"{CachePrefix}{id}:views";
 
     private const int MaxPageSize = 50;
 
@@ -100,7 +107,7 @@ public class PostsController : ControllerBase
         // TODO [SV2]: Implement Cache-Aside Pattern
         // ====== CACHE-ASIDE FLOW ======
         // Bước 1: Kiểm tra cache
-        //   var cached = await _cacheService.GetAsync(CachePrefix + id);
+        //   var cached = await _cacheService.GetAsync(CacheKey(id));
         //   if (cached != null) → deserialize JSON → return (CACHE HIT)
         //
         // Bước 2: Cache Miss → đọc từ MongoDB
@@ -109,7 +116,7 @@ public class PostsController : ControllerBase
         //
         // Bước 3: Ghi ngược vào Redis kèm TTL (EXPIRE)
         //   var json = JsonSerializer.Serialize(post);
-        //   await _cacheService.SetAsync(CachePrefix + id, json, CacheTtl);
+        //   await _cacheService.SetAsync(CacheKey(id), json, CacheTtl);
         //
         // Bước 4: Trả về PostResponse
         // ==============================
@@ -127,8 +134,8 @@ public class PostsController : ControllerBase
         if (userId == null)
             return Unauthorized(new { message = "Bạn cần đăng nhập để tạo bài viết." });
 
-        if (!IsValidCategoryId(request.CategoryId))
-            return BadRequest(new { message = "ID chuyên mục không hợp lệ." });
+        if (!await IsValidCategoryAsync(request.CategoryId))
+            return BadRequest(new { message = "Chuyên mục không hợp lệ hoặc không tồn tại." });
 
         var now = DateTime.UtcNow;
         var post = new Post
@@ -161,8 +168,8 @@ public class PostsController : ControllerBase
         if (!ObjectId.TryParse(id, out _))
             return BadRequest(new { message = "ID bài viết không hợp lệ." });
 
-        if (!IsValidCategoryId(request.CategoryId))
-            return BadRequest(new { message = "ID chuyên mục không hợp lệ." });
+        if (!await IsValidCategoryAsync(request.CategoryId))
+            return BadRequest(new { message = "Chuyên mục không hợp lệ hoặc không tồn tại." });
 
         var filter = NotDeleted & Builders<Post>.Filter.Eq(p => p.Id, id);
         var post = await _mongo.Posts.Find(filter).FirstOrDefaultAsync();
@@ -184,8 +191,10 @@ public class PostsController : ControllerBase
         if (updated == null)
             return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
 
-        // Cache Invalidation: DB gốc đã đổi → xóa bản cache cũ
-        await _cacheService.RemoveAsync(CachePrefix + id);
+        // Cache Invalidation: DB gốc đã đổi → xóa bản cache cũ.
+        // Lưu ý: cache danh sách (posts:cat:*) chưa xóa được vì ICacheService
+        // chưa có RemoveByPrefixAsync — đã nhờ SV2 bổ sung (xem SCRUM-23/26).
+        await _cacheService.RemoveAsync(CacheKey(id));
 
         return Ok(PostResponse.FromModel(updated));
     }
@@ -229,11 +238,10 @@ public class PostsController : ControllerBase
             return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
         }
 
-        // Cache-Aside: sau khi DB gốc thay đổi, xóa ngay dữ liệu Redis liên quan
-        // để request tiếp theo không đọc lại nội dung hoặc bộ đếm đã cũ.
-        await Task.WhenAll(
-            _cacheService.RemoveAsync(CachePrefix + id),
-            _cacheService.RemoveAsync(ViewsPrefix + id));
+        // Cache Invalidation: xóa bản cache nội dung để request sau không đọc bài đã xóa.
+        // KHÔNG xóa post:{id}:views — đây là xóa mềm (bài có thể phục hồi) và lượt xem
+        // là số liệu tích lũy, phải để job flush của SV2 chốt về MongoDB trước.
+        await _cacheService.RemoveAsync(CacheKey(id));
 
         return NoContent();
     }
@@ -245,7 +253,7 @@ public class PostsController : ControllerBase
     public async Task<IActionResult> IncrementView(string id)
     {
         // TODO [SV2]: Implement bộ đếm INCR lượt xem
-        // 1. Gọi _cacheService.IncrementAsync(ViewsPrefix + id) → trả về lượt xem mới
+        // 1. Gọi _cacheService.IncrementAsync(ViewsKey(id)) → trả về lượt xem mới
         // 2. (Tuỳ chọn) Đồng bộ ngược về MongoDB mỗi N lần hoặc theo schedule
         // 3. Trả về 200 OK kèm { views: newCount }
 
@@ -275,8 +283,23 @@ public class PostsController : ControllerBase
     private static bool CanModify(Post post, string userId) =>
         string.IsNullOrEmpty(post.AuthorId) || post.AuthorId == userId;
 
-    private static bool IsValidCategoryId(string? categoryId) =>
-        string.IsNullOrWhiteSpace(categoryId) || ObjectId.TryParse(categoryId, out _);
+    // Collection "categories" lấy qua MongoContext.Database để không phải sửa MongoContext.cs (file dùng chung).
+    private IMongoCollection<Category> Categories => _mongo.Database.GetCollection<Category>("categories");
+
+    /// <summary>
+    /// Chuyên mục hợp lệ = để trống, hoặc là ObjectId thật sự tồn tại trong collection "categories".
+    /// Kiểm tra tồn tại để tránh bài viết trỏ vào chuyên mục đã bị xóa (orphan reference).
+    /// </summary>
+    private async Task<bool> IsValidCategoryAsync(string? categoryId)
+    {
+        if (string.IsNullOrWhiteSpace(categoryId))
+            return true;
+
+        if (!ObjectId.TryParse(categoryId, out _))
+            return false;
+
+        return await Categories.Find(c => c.Id == categoryId).AnyAsync();
+    }
 
     private static string? NullIfEmpty(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
