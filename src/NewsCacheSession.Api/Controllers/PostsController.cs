@@ -1,6 +1,3 @@
-using System.Globalization;
-using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -8,6 +5,7 @@ using NewsCacheSession.Api.Data;
 using NewsCacheSession.Api.DTOs.Posts;
 using NewsCacheSession.Api.Models;
 using NewsCacheSession.Api.Services;
+using NewsCacheSession.Api.Utils;
 
 namespace NewsCacheSession.Api.Controllers;
 
@@ -17,12 +15,13 @@ public class PostsController : ControllerBase
 {
     private readonly MongoContext _mongo;
     private readonly ICacheService _cacheService;
-    private readonly ISessionService _sessionService;
+    private readonly ICurrentUserService _currentUser;
 
     // ===== Hợp đồng keyspace Redis — xem docs/redis-keyspace.md =====
     // Mọi key liên quan bài viết nằm chung namespace "post:" / "posts:" để SCAN gom được hết.
     private const string CachePrefix = "post:";              // post:{id}         — String JSON, TTL 10 phút
-    private const string ListCachePrefix = "posts:cat:";     // posts:cat:{catId}:p{n} — SV2 (SCRUM-26)
+    private const string ListCachePrefix = "posts:cat:";     // posts:cat:{catId}:p{n}:v{ver} — SV2 (SCRUM-26)
+    private const string ListVersionKey = "posts:ver";       // bộ đếm phiên bản cache danh sách
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
 
     /// <summary>Key cache nội dung bài viết: <c>post:{id}</c>.</summary>
@@ -31,17 +30,29 @@ public class PostsController : ControllerBase
     /// <summary>Key bộ đếm lượt xem (INCR, không TTL): <c>post:{id}:views</c>.</summary>
     private static string ViewsKey(string id) => $"{CachePrefix}{id}:views";
 
+    /// <summary>
+    /// Vô hiệu hóa TOÀN BỘ cache danh sách bằng cách tăng số phiên bản (cache key versioning).
+    ///
+    /// Cách thường thấy là SCAN tìm rồi DEL từng key <c>posts:cat:*</c>, nhưng SCAN là O(N) theo
+    /// số key và phải lặp nhiều lượt. Ở đây chỉ cần một lệnh INCR: key cũ mang số phiên bản
+    /// nhỏ hơn nên không ai tra tới nữa, và tự biến mất khi hết TTL 3 phút.
+    ///
+    /// SV2 (SCRUM-26) khi dựng key cache danh sách phải đọc số này và ghép vào key:
+    /// <c>posts:cat:{categoryId}:p{page}:v{ver}</c>.
+    /// </summary>
+    private Task BumpListVersionAsync() => _cacheService.IncrementAsync(ListVersionKey);
+
     private const int MaxPageSize = 50;
 
     // Bài viết chưa bị xóa mềm. Dùng Ne(true) để khớp cả document cũ chưa có field IsDeleted.
     private static readonly FilterDefinition<Post> NotDeleted =
         Builders<Post>.Filter.Ne(p => p.IsDeleted, true);
 
-    public PostsController(MongoContext mongo, ICacheService cacheService, ISessionService sessionService)
+    public PostsController(MongoContext mongo, ICacheService cacheService, ICurrentUserService currentUser)
     {
         _mongo = mongo;
         _cacheService = cacheService;
-        _sessionService = sessionService;
+        _currentUser = currentUser;
     }
 
     /// <summary>
@@ -130,8 +141,8 @@ public class PostsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePostRequest request)
     {
-        var userId = await GetCurrentUserIdAsync();
-        if (userId == null)
+        var current = await _currentUser.GetAsync(HttpContext);
+        if (current == null)
             return Unauthorized(new { message = "Bạn cần đăng nhập để tạo bài viết." });
 
         if (!await IsValidCategoryAsync(request.CategoryId))
@@ -145,11 +156,14 @@ public class PostsController : ControllerBase
             Content = request.Content,
             ImageUrl = request.ImageUrl,
             CategoryId = NullIfEmpty(request.CategoryId),
-            AuthorId = userId,
+            AuthorId = current.UserId,
             CreatedAt = now,
             UpdatedAt = now
         };
         await _mongo.Posts.InsertOneAsync(post);
+
+        // Bài mới phải xuất hiện trên trang chủ ngay, không đợi hết TTL cache danh sách.
+        await BumpListVersionAsync();
 
         return CreatedAtAction(nameof(GetBySlug), new { slug = post.Slug }, PostResponse.FromModel(post));
     }
@@ -161,8 +175,8 @@ public class PostsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, [FromBody] UpdatePostRequest request)
     {
-        var userId = await GetCurrentUserIdAsync();
-        if (userId == null)
+        var current = await _currentUser.GetAsync(HttpContext);
+        if (current == null)
             return Unauthorized(new { message = "Bạn cần đăng nhập để sửa bài viết." });
 
         if (!ObjectId.TryParse(id, out _))
@@ -176,7 +190,7 @@ public class PostsController : ControllerBase
         if (post == null)
             return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
 
-        if (!CanModify(post, userId))
+        if (!CanModify(post, current))
             return StatusCode(StatusCodes.Status403Forbidden, new { message = "Bạn không có quyền sửa bài viết này." });
 
         var update = Builders<Post>.Update
@@ -191,10 +205,12 @@ public class PostsController : ControllerBase
         if (updated == null)
             return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
 
-        // Cache Invalidation: DB gốc đã đổi → xóa bản cache cũ.
-        // Lưu ý: cache danh sách (posts:cat:*) chưa xóa được vì ICacheService
-        // chưa có RemoveByPrefixAsync — đã nhờ SV2 bổ sung (xem SCRUM-23/26).
-        await _cacheService.RemoveAsync(CacheKey(id));
+        // Cache Invalidation — DB gốc đã đổi nên phải bỏ bản cache cũ:
+        //   1. xóa cache nội dung bài viết
+        //   2. tăng phiên bản để cache danh sách (tiêu đề/chuyên mục có thể đã đổi) hết hiệu lực
+        await Task.WhenAll(
+            _cacheService.RemoveAsync(CacheKey(id)),
+            BumpListVersionAsync());
 
         return Ok(PostResponse.FromModel(updated));
     }
@@ -205,8 +221,8 @@ public class PostsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        var userId = await GetCurrentUserIdAsync();
-        if (userId == null)
+        var current = await _currentUser.GetAsync(HttpContext);
+        if (current == null)
             return Unauthorized(new { message = "Bạn cần đăng nhập để xóa bài viết." });
 
         if (!ObjectId.TryParse(id, out _))
@@ -221,7 +237,7 @@ public class PostsController : ControllerBase
             return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
         }
 
-        if (!CanModify(post, userId))
+        if (!CanModify(post, current))
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { message = "Bạn không có quyền xóa bài viết này." });
         }
@@ -238,10 +254,12 @@ public class PostsController : ControllerBase
             return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
         }
 
-        // Cache Invalidation: xóa bản cache nội dung để request sau không đọc bài đã xóa.
+        // Cache Invalidation: xóa bản cache nội dung + hạ hiệu lực cache danh sách.
         // KHÔNG xóa post:{id}:views — đây là xóa mềm (bài có thể phục hồi) và lượt xem
         // là số liệu tích lũy, phải để job flush của SV2 chốt về MongoDB trước.
-        await _cacheService.RemoveAsync(CacheKey(id));
+        await Task.WhenAll(
+            _cacheService.RemoveAsync(CacheKey(id)),
+            BumpListVersionAsync());
 
         return NoContent();
     }
@@ -263,25 +281,16 @@ public class PostsController : ControllerBase
     // ===== Helpers =====
 
     /// <summary>
-    /// Lấy UserId của người đang đăng nhập: ưu tiên giá trị SessionAuthMiddleware đã gán,
-    /// nếu chưa có thì tự đọc session trên Redis từ Cookie "SessionId" / Header "X-Session-Id".
+    /// Quy tắc sửa/xóa bài viết:
+    /// <list type="bullet">
+    ///   <item>admin — sửa/xóa được mọi bài, kể cả bài không có tác giả (100 bài seed)</item>
+    ///   <item>người dùng thường — chỉ sửa/xóa bài mình viết</item>
+    /// </list>
+    /// Bài không có authorId thuộc trách nhiệm quản trị, nên không để ai đăng nhập cũng sửa
+    /// được như trước — nếu không thì mọi tài khoản đều xóa được 100 bài seed.
     /// </summary>
-    private async Task<string?> GetCurrentUserIdAsync()
-    {
-        if (HttpContext.Items["UserId"] is string userId && !string.IsNullOrEmpty(userId))
-            return userId;
-
-        var sessionId = Request.Cookies["SessionId"] ?? Request.Headers["X-Session-Id"].FirstOrDefault();
-        if (string.IsNullOrEmpty(sessionId))
-            return null;
-
-        var session = await _sessionService.GetSessionAsync(sessionId);
-        return session?.GetValueOrDefault("userId");
-    }
-
-    // Bài không có tác giả (vd. dữ liệu seed) thì ai đăng nhập cũng sửa/xóa được
-    private static bool CanModify(Post post, string userId) =>
-        string.IsNullOrEmpty(post.AuthorId) || post.AuthorId == userId;
+    private static bool CanModify(Post post, CurrentUser current) =>
+        current.IsAdmin || (!string.IsNullOrEmpty(post.AuthorId) && post.AuthorId == current.UserId);
 
     // Collection "categories" lấy qua MongoContext.Database để không phải sửa MongoContext.cs (file dùng chung).
     private IMongoCollection<Category> Categories => _mongo.Database.GetCollection<Category>("categories");
@@ -305,32 +314,12 @@ public class PostsController : ControllerBase
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     /// <summary>
-    /// "Tin nóng hôm nay!" → "tin-nong-hom-nay" (bỏ dấu tiếng Việt, chỉ giữ a-z, 0-9, '-').
-    /// </summary>
-    private static string ToSlug(string text)
-    {
-        var normalized = text.Trim().ToLowerInvariant()
-            .Replace('đ', 'd')
-            .Normalize(NormalizationForm.FormD);
-
-        var sb = new StringBuilder();
-        foreach (var c in normalized)
-        {
-            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
-                sb.Append(c);
-        }
-
-        var slug = Regex.Replace(sb.ToString(), "[^a-z0-9]+", "-").Trim('-');
-        return string.IsNullOrEmpty(slug) ? "bai-viet" : slug;
-    }
-
-    /// <summary>
     /// Sinh slug không trùng: nếu đã có thì thêm hậu tố -2, -3, ...
     /// Kiểm tra cả bài đã xóa mềm để slug cũ không bị dùng lại.
     /// </summary>
     private async Task<string> GenerateUniqueSlugAsync(string title)
     {
-        var baseSlug = ToSlug(title);
+        var baseSlug = SlugHelper.ToSlug(title);
         var slug = baseSlug;
         for (var i = 2; await _mongo.Posts.Find(p => p.Slug == slug).AnyAsync(); i++)
             slug = $"{baseSlug}-{i}";

@@ -8,12 +8,29 @@ Mọi key liên quan bài viết nằm chung namespace `post:` / `posts:` để 
 | `session:{sessionId}` | Hash | 30 phút (sliding — refresh mỗi request) | Session người dùng: `userId`, `username`, `role`, `loginAt`, `lastActive` |
 | `post:{postId}` | String (JSON serialize) | 10 phút | Cache toàn bộ nội dung bài viết cho luồng Cache-Aside |
 | `post:{postId}:views` | String (số nguyên) | Không TTL | Bộ đếm lượt xem thời gian thực bằng `INCR` |
-| `posts:cat:{categoryId}:p{n}` | String (JSON serialize list) | 3 phút | Cache danh sách bài viết theo chuyên mục, theo trang |
+| `posts:cat:{categoryId}:p{n}:v{ver}` | String (JSON serialize list) | 3 phút | Cache danh sách bài viết theo chuyên mục, theo trang |
+| `posts:ver` | String (số nguyên) | Không TTL | Số phiên bản cache danh sách — `INCR` để vô hiệu hóa toàn bộ |
 | `lock:post:{postId}` | String | 5 giây | Khóa chống cache stampede — `SET key value NX PX 5000` |
 
 Hằng số tương ứng trong code nằm ở đầu `Controllers/PostsController.cs`
-(`CachePrefix`, `ListCachePrefix`, `CacheKey()`, `ViewsKey()`) và
-`Services/RedisSessionService.cs`. Sửa key thì sửa cả hai nơi lẫn bảng này.
+(`CachePrefix`, `ListCachePrefix`, `ListVersionKey`, `CacheKey()`, `ViewsKey()`),
+`Services/RedisSessionService.cs` và `Services/CurrentUserService.cs`.
+Sửa key thì sửa cả code lẫn bảng này.
+
+### Field trong Hash `session:{sessionId}`
+
+| Field | Ai ghi | Ghi chú |
+|---|---|---|
+| `userId`, `username`, `loginAt` | `RedisSessionService.CreateSessionAsync` (SV2) | `loginAt` là Unix seconds |
+| `role` | `AuthController.Login` → `CurrentUserService.TouchAsync` (SV1) | `"admin"` hoặc `"user"` |
+| `lastActive` | `CurrentUserService.TouchAsync` (SV1) | Unix seconds |
+
+`role` được ghi vào Hash ngay lúc đăng nhập để mọi request sau đó biết người gọi có
+phải admin hay không **mà không phải query MongoDB**. Phiên tạo bởi bản code cũ chưa
+có field này thì được tra bù một lần rồi ghi lại vào Hash.
+
+`HSET` trên key đã tồn tại **không xóa TTL**, nên ghi thêm field không làm phiên mất
+hạn hay được gia hạn ngoài ý muốn — đã kiểm chứng bằng `TTL session:{id}` sau khi ghi.
 
 ## Vì sao chọn cấu trúc dữ liệu như vậy
 
@@ -62,11 +79,29 @@ Hiện thực ở `GET /api/posts/{id}`.
 Khi sửa hoặc xóa bài viết, sau khi MongoDB đã đổi thì xóa ngay key Redis liên quan;
 lần đọc tiếp theo sẽ MISS và nạp lại dữ liệu mới.
 
-| Hành động | Key phải xóa |
+| Hành động | Việc phải làm |
 |---|---|
-| Tạo bài viết | `posts:cat:*` (bài mới phải xuất hiện trên trang chủ ngay) |
-| Sửa bài viết | `post:{postId}` và `posts:cat:*` |
-| Xóa mềm bài viết | `post:{postId}` và `posts:cat:*` |
+| Tạo bài viết | `INCR posts:ver` (bài mới phải lên trang chủ ngay) |
+| Sửa bài viết | `DEL post:{postId}` + `INCR posts:ver` |
+| Xóa mềm bài viết | `DEL post:{postId}` + `INCR posts:ver` |
+
+### Vì sao cache danh sách dùng số phiên bản thay vì xóa key
+
+Cache một bài viết chỉ có đúng một key nên `DEL` là xong. Nhưng cache danh sách thì
+rải ra rất nhiều key: mỗi chuyên mục × mỗi số trang. Muốn xóa hết phải `SCAN` tìm
+rồi `DEL` từng cái — chi phí O(N) theo số key và phải lặp nhiều lượt.
+
+Thay vào đó, số phiên bản `posts:ver` được ghép vào key:
+`posts:cat:{categoryId}:p{page}:v{ver}`. Mỗi lần dự liệu đổi chỉ cần **một lệnh `INCR`**:
+toàn bộ key cũ mang số phiên bản nhỏ hơn nên không ai tra tới nữa, và tự biến mất khi
+hết TTL 3 phút. Đây là mẫu *cache key versioning* (hay *generational caching*).
+
+Đánh đổi: trong tối đa 3 phút, Redis còn giữ cả bản cũ lẫn bản mới nên tốn thêm
+bộ nhớ. Với danh sách bài viết thì không đáng kể, và đổi lại được invalidation O(1)
+không chặn Redis.
+
+`posts:ver` **không đặt TTL**: nếu key này hết hạn rồi quay về 0 thì các key cache cũ
+(vẫn còn số phiên bản cao hơn) có thể bị tra lại — đọc ra dự liệu cũ.
 
 **Không xóa `post:{postId}:views`** khi xóa mềm: bài viết vẫn có thể phục hồi, và
 lượt xem là số liệu tích lũy — phải để job flush chốt về MongoDB trước.

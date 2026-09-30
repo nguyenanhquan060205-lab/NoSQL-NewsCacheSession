@@ -37,6 +37,11 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Conn
 
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
 builder.Services.AddScoped<ISessionService, RedisSessionService>();
+builder.Services.AddScoped<ISessionQueryService, RedisSessionQueryService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+// Tạo index MongoDB lúc khởi động (posts.slug, users.username, categories.slug) — xem docs/mongodb-schema.md
+builder.Services.AddHostedService<MongoIndexInitializer>();
 
 // Health Checks (MongoDB & Redis)
 builder.Services.AddHealthChecks()

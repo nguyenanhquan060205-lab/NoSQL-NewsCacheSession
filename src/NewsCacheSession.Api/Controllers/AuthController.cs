@@ -4,6 +4,7 @@ using NewsCacheSession.Api.Data;
 using NewsCacheSession.Api.DTOs.Auth;
 using NewsCacheSession.Api.Models;
 using NewsCacheSession.Api.Services;
+using StackExchange.Redis;
 
 namespace NewsCacheSession.Api.Controllers;
 
@@ -13,21 +14,32 @@ public class AuthController : ControllerBase
 {
     private readonly MongoContext _mongo;
     private readonly ISessionService _sessionService;
+    private readonly ISessionQueryService _sessionQueryService;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IConnectionMultiplexer _redis;
 
-    // Tên cookie/header chứa SessionId & TTL của session (xem docs/redis-keyspace.md)
-    private const string SessionCookieName = "SessionId";
-    private const string SessionHeaderName = "X-Session-Id";
+    // TTL của session — xem bảng keyspace trong docs/redis-keyspace.md
     private static readonly TimeSpan SessionTtl = TimeSpan.FromMinutes(30);
 
-    public AuthController(MongoContext mongo, ISessionService sessionService)
+    private const int MaxSessionsReturned = 200;
+
+    public AuthController(
+        MongoContext mongo,
+        ISessionService sessionService,
+        ISessionQueryService sessionQueryService,
+        ICurrentUserService currentUser,
+        IConnectionMultiplexer redis)
     {
         _mongo = mongo;
         _sessionService = sessionService;
+        _sessionQueryService = sessionQueryService;
+        _currentUser = currentUser;
+        _redis = redis;
     }
 
     /// <summary>
-    /// Đăng ký tài khoản mới.
-    /// Lưu User vào MongoDB với password đã hash.
+    /// Đăng ký tài khoản mới. Lưu User vào MongoDB với password đã hash BCrypt.
+    /// Tài khoản ĐẦU TIÊN của hệ thống tự động là admin (bootstrap admin).
     /// </summary>
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
@@ -36,23 +48,35 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(username))
             return BadRequest(new { message = "Username không được để trống" });
 
-        // 1. Kiểm tra username đã tồn tại chưa
+        // 1. Kiểm tra username đã tồn tại chưa. Unique index users.username (MongoIndexInitializer)
+        //    mới là chốt chặn thật; kiểm tra ở đây chỉ để trả lỗi 409 dễ hiểu cho người dùng.
         var exists = await _mongo.Users.Find(u => u.Username == username).AnyAsync();
         if (exists)
             return Conflict(new { message = "Username đã tồn tại" });
 
-        // 2. Hash password bằng BCrypt
-        // 3. Tạo User mới, lưu vào MongoDB
+        // 2. Người đăng ký đầu tiên làm admin — hệ thống luôn có ít nhất một người quản trị
+        //    mà không cần chèn tay vào DB hay để lộ mật khẩu admin trong file cấu hình.
+        var isFirstUser = !await _mongo.Users.Find(FilterDefinition<User>.Empty).AnyAsync();
+
         var user = new User
         {
             Username = username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Role = isFirstUser ? UserRoles.Admin : UserRoles.User,
             CreatedAt = DateTime.UtcNow
         };
-        await _mongo.Users.InsertOneAsync(user);
 
-        // 4. Trả về 201 Created
-        return StatusCode(StatusCodes.Status201Created, new { user.Id, user.Username });
+        try
+        {
+            await _mongo.Users.InsertOneAsync(user);
+        }
+        catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+        {
+            // Hai request đăng ký cùng username chen nhau: unique index chặn ở tầng DB.
+            return Conflict(new { message = "Username đã tồn tại" });
+        }
+
+        return StatusCode(StatusCodes.Status201Created, new { user.Id, user.Username, user.Role });
     }
 
     /// <summary>
@@ -65,7 +89,8 @@ public class AuthController : ControllerBase
         var username = request.Username.Trim();
         var user = await _mongo.Users.Find(u => u.Username == username).FirstOrDefaultAsync();
 
-        // 2. So sánh password hash (trả cùng 1 thông báo để không lộ username có tồn tại hay không)
+        // 2. So sánh password hash. Sai username và sai password trả CÙNG một thông báo
+        //    để không tiết lộ username nào có tồn tại trong hệ thống.
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Unauthorized(new { message = "Sai username hoặc password" });
 
@@ -73,8 +98,14 @@ public class AuthController : ControllerBase
         var sessionId = Guid.NewGuid().ToString();
         await _sessionService.CreateSessionAsync(sessionId, user.Id, user.Username, SessionTtl);
 
-        // 5. Set Cookie "SessionId"
-        Response.Cookies.Append(SessionCookieName, sessionId, new CookieOptions
+        // 5. Bổ sung role + lastActive vào Hash session. CreateSessionAsync (file của SV2) chưa
+        //    nhận role, nên ghi thêm ở đây để middleware và trang quản trị đọc được ngay,
+        //    khỏi phải query MongoDB mỗi request. HSET không làm mất TTL đã đặt ở bước trên.
+        await _currentUser.TouchAsync(sessionId, user.Role);
+
+        // 6. Set Cookie "SessionId" — HttpOnly để JavaScript không đọc được (chống XSS
+        //    đánh cắp phiên); Secure bật theo scheme thật của request.
+        Response.Cookies.Append(CurrentUserService.SessionCookieName, sessionId, new CookieOptions
         {
             HttpOnly = true,
             SameSite = SameSiteMode.Lax,
@@ -82,8 +113,13 @@ public class AuthController : ControllerBase
             MaxAge = SessionTtl
         });
 
-        // 6. Trả về LoginResponse
-        return Ok(new LoginResponse { SessionId = sessionId, Username = user.Username });
+        return Ok(new LoginResponse
+        {
+            SessionId = sessionId,
+            UserId = user.Id,
+            Username = user.Username,
+            Role = user.Role
+        });
     }
 
     /// <summary>
@@ -92,49 +128,96 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
-        // 1. Đọc SessionId từ Cookie hoặc Header
-        var sessionId = GetSessionId();
-
-        // 2. Xóa session trên Redis (DEL session:{id})
+        var sessionId = CurrentUserService.ReadSessionId(HttpContext);
         if (!string.IsNullOrEmpty(sessionId))
             await _sessionService.RemoveSessionAsync(sessionId);
 
-        // 3. Xóa Cookie "SessionId"
-        Response.Cookies.Delete(SessionCookieName);
-
-        // 4. Trả về 200 OK
+        Response.Cookies.Delete(CurrentUserService.SessionCookieName);
         return Ok(new { message = "Đăng xuất thành công" });
     }
 
     /// <summary>
-    /// Lấy thông tin phiên đăng nhập hiện tại từ Redis Session.
+    /// Thông tin phiên đăng nhập hiện tại, kèm số giây còn lại trước khi hết hạn.
     /// </summary>
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
-        // 1. Đọc SessionId từ Cookie hoặc Header
-        var sessionId = GetSessionId();
-        if (string.IsNullOrEmpty(sessionId))
-            return Unauthorized(new { message = "Chưa đăng nhập" });
+        var current = await _currentUser.GetAsync(HttpContext);
+        if (current == null)
+            return Unauthorized(new { message = "Chưa đăng nhập hoặc phiên đã hết hạn" });
 
-        // 2-3. HGETALL session:{id} — null nghĩa là session không tồn tại/đã hết hạn
-        var session = await _sessionService.GetSessionAsync(sessionId);
-        if (session == null)
-            return Unauthorized(new { message = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn" });
-
-        // 4. Trả về SessionInfoResponse (loginAt lưu dạng Unix seconds → đổi sang ISO 8601)
-        var loginAt = session.GetValueOrDefault("loginAt", string.Empty);
-        if (long.TryParse(loginAt, out var unixSeconds))
-            loginAt = DateTimeOffset.FromUnixTimeSeconds(unixSeconds).ToString("o");
+        var ttl = await _redis.GetDatabase().KeyTimeToLiveAsync(CurrentUserService.SessionKey(current.SessionId));
 
         return Ok(new SessionInfoResponse
         {
-            UserId = session.GetValueOrDefault("userId", string.Empty),
-            Username = session.GetValueOrDefault("username", string.Empty),
-            LoginAt = loginAt
+            UserId = current.UserId,
+            Username = current.Username,
+            Role = current.Role,
+            LoginAt = ToIso(current.LoginAt),
+            ExpiresInSeconds = ttl.HasValue ? (long)ttl.Value.TotalSeconds : -1
         });
     }
 
-    private string? GetSessionId() =>
-        Request.Cookies[SessionCookieName] ?? Request.Headers[SessionHeaderName].FirstOrDefault();
+    /// <summary>
+    /// Liệt kê các phiên đang hoạt động kèm TTL còn lại — trang quản trị phiên (SCRUM-31).
+    /// Chỉ admin gọi được.
+    /// </summary>
+    [HttpGet("sessions")]
+    public async Task<IActionResult> GetActiveSessions(CancellationToken ct)
+    {
+        var current = await _currentUser.GetAsync(HttpContext);
+        if (current == null)
+            return Unauthorized(new { message = "Chưa đăng nhập hoặc phiên đã hết hạn" });
+
+        if (!current.IsAdmin)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { message = "Chỉ quản trị viên xem được danh sách phiên đăng nhập." });
+
+        var sessions = await _sessionQueryService.ListActiveSessionsAsync(MaxSessionsReturned, ct);
+
+        // Phiên nào chưa có field role (tạo bởi bản code cũ) thì tra bù bằng MỘT query
+        // MongoDB cho tất cả, thay vì mỗi phiên một query — tránh N+1.
+        var roleByUserId = await _currentUser.LookupRolesAsync(
+            sessions.Where(s => string.IsNullOrEmpty(s.Role)).Select(s => s.UserId), ct);
+
+        var items = sessions
+            .Select(s => ActiveSessionResponse.FromInfo(
+                s,
+                string.IsNullOrEmpty(s.Role) ? roleByUserId.GetValueOrDefault(s.UserId) : s.Role,
+                current.SessionId))
+            .OrderByDescending(s => s.ExpiresInSeconds)
+            .ToList();
+
+        return Ok(items);
+    }
+
+    /// <summary>
+    /// Buộc đăng xuất một phiên (thu hồi session). Chỉ admin gọi được.
+    /// </summary>
+    [HttpDelete("sessions/{sessionId}")]
+    public async Task<IActionResult> RevokeSession(string sessionId)
+    {
+        var current = await _currentUser.GetAsync(HttpContext);
+        if (current == null)
+            return Unauthorized(new { message = "Chưa đăng nhập hoặc phiên đã hết hạn" });
+
+        if (!current.IsAdmin)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { message = "Chỉ quản trị viên thu hồi được phiên đăng nhập." });
+
+        if (sessionId == current.SessionId)
+            return BadRequest(new { message = "Không thể tự thu hồi phiên đang dùng — hãy dùng chức năng đăng xuất." });
+
+        if (await _sessionService.GetSessionAsync(sessionId) == null)
+            return NotFound(new { message = "Phiên không tồn tại hoặc đã hết hạn." });
+
+        await _sessionService.RemoveSessionAsync(sessionId);
+        return NoContent();
+    }
+
+    /// <summary>Redis Hash chỉ lưu string nên mốc thời gian lưu dạng Unix seconds — đổi sang ISO 8601.</summary>
+    private static string ToIso(string? unixSeconds) =>
+        long.TryParse(unixSeconds, out var seconds)
+            ? DateTimeOffset.FromUnixTimeSeconds(seconds).ToString("o")
+            : unixSeconds ?? string.Empty;
 }
