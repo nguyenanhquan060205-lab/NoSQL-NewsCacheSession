@@ -4,6 +4,8 @@
 >
 > Tài liệu này giải thích **toàn bộ kiến trúc, cách cài đặt, cách chạy, luồng hoạt động, và hướng dẫn implement chi tiết** cho từng thành viên. Đọc từ đầu đến cuối để nắm rõ trước khi bắt tay vào code.
 
+📌 Hợp đồng dự liệu chính thức (tên field MongoDB, keyspace Redis, phân công file) nằm ở [`AGENTS.md`](../AGENTS.md) — nếu hai bên lệch nhau thì lấy `AGENTS.md` làm chuẩn.
+
 ---
 
 ## Mục lục
@@ -63,7 +65,7 @@
 │   localhost:27017       │  │       localhost:6379              │
 │                         │  │                                   │
 │  Database: newsdb       │  │  Strings:  post:{id}    (cache)   │
-│  Collections:           │  │  Strings:  post_views:{id} (INCR)│
+│  Collections:           │  │  Strings:  post:{id}:views (INCR) │
 │    - posts (100 bài)    │  │  Hashes:   session:{id} (session)│
 │    - users              │  │            ↳ userId, username,    │
 │                         │  │              loginAt + TTL 30min  │
@@ -214,13 +216,17 @@ Collections:       posts, users
 ```json
 {
   "_id": ObjectId("64a1b2c3d4e5f6..."),
-  "Title": "Tiêu đề bài viết",
-  "Content": "Nội dung chi tiết...",
-  "ImageUrl": "https://picsum.photos/800/400",
-  "AuthorId": "64a1b2c3d4e5f6...",
-  "Views": 0,
-  "CreatedAt": ISODate("2026-08-20T10:00:00Z"),
-  "UpdatedAt": ISODate("2026-08-20T10:00:00Z")
+  "title": "Tiêu đề bài viết",
+  "slug": "tieu-de-bai-viet",
+  "content": "Nội dung chi tiết...",
+  "imageUrl": "https://picsum.photos/800/400",
+  "categoryId": ObjectId("64a1b2c3d4e5f6..."),
+  "authorId": ObjectId("64a1b2c3d4e5f6..."),
+  "views": 0,
+  "isDeleted": false,
+  "deletedAt": null,
+  "createdAt": ISODate("2026-08-20T10:00:00Z"),
+  "updatedAt": ISODate("2026-08-20T10:00:00Z")
 }
 ```
 
@@ -228,9 +234,10 @@ Collections:       posts, users
 ```json
 {
   "_id": ObjectId("64a1b2c3d4e5f6..."),
-  "Username": "admin",
-  "PasswordHash": "$2a$11$xxxx...",
-  "CreatedAt": ISODate("2026-08-20T10:00:00Z")
+  "username": "admin",
+  "passwordHash": "$2a$11$xxxx...",
+  "role": "admin",
+  "createdAt": ISODate("2026-08-20T10:00:00Z")
 }
 ```
 
@@ -270,7 +277,7 @@ redis-cli TTL "post:64a1b2c3d4e5f6"
 redis-cli HGETALL "session:abc-def-123"
 
 # Xem lượt xem (kiểu String, giá trị số)
-redis-cli GET "post_views:64a1b2c3d4e5f6"
+redis-cli GET "post:64a1b2c3d4e5f6:views"
 
 # Xóa 1 key
 redis-cli DEL "post:64a1b2c3d4e5f6"
@@ -583,8 +590,8 @@ Lần tiếp theo có ai đọc bài viết này:
 Mỗi khi user mở bài viết → Frontend gọi POST /api/posts/{id}/view
     ↓
 PostsController.IncrementView(id):
-    await _cacheService.IncrementAsync("post_views:{id}");
-    → Redis: INCR "post_views:{id}"
+    await _cacheService.IncrementAsync(ViewsKey(id));
+    → Redis: INCR "post:{id}:views"
     → Redis tự tăng giá trị lên 1 (atomic, real-time)
     → Trả về số lượt xem mới
 
@@ -603,7 +610,7 @@ phù hợp đếm real-time ngay cả khi 1000 người cùng xem.
 | Key Pattern | Redis Data Type | Mục đích | TTL | Lệnh chính |
 |---|---|---|---|---|
 | `post:{objectId}` | **String** (JSON) | Cache bài viết (Cache-Aside) | 10 phút | `GET`, `SET ... EX 600`, `DEL` |
-| `post_views:{objectId}` | **String** (số nguyên) | Bộ đếm lượt xem real-time | Không TTL | `INCR`, `GET` |
+| `post:{objectId}:views` | **String** (số nguyên) | Bộ đếm lượt xem real-time | Không TTL | `INCR`, `GET` |
 | `session:{guid}` | **Hash** | Phiên đăng nhập người dùng | 30 phút | `HSET`, `HGETALL`, `EXPIRE`, `DEL` |
 
 ### 8.2 Ví dụ cụ thể trong Redis
@@ -612,11 +619,11 @@ phù hợp đếm real-time ngay cả khi 1000 người cùng xem.
 # Cache bài viết (String chứa JSON)
 KEY:   post:64a1b2c3d4e5f6
 TYPE:  string
-VALUE: {"Id":"64a1b2c3d4e5f6","Title":"Tin hot","Content":"...","Views":42,...}
+VALUE: {"id":"64a1b2c3d4e5f6","title":"Tin hot","content":"...","views":42,...}
 TTL:   600 (10 phút, đếm ngược)
 
 # Bộ đếm lượt xem (String chứa số)
-KEY:   post_views:64a1b2c3d4e5f6
+KEY:   post:64a1b2c3d4e5f6:views
 TYPE:  string
 VALUE: "150"
 TTL:   -1 (không hết hạn)
@@ -1051,8 +1058,8 @@ public async Task<IActionResult> Update(string id, [FromBody] UpdatePostRequest 
 public async Task<IActionResult> IncrementView(string id)
 {
     // INCR — tăng lượt xem lên 1 (atomic operation)
-    var newCount = await _cacheService.IncrementAsync(ViewsPrefix + id);
-    // Redis command: INCR "post_views:{id}"
+    var newCount = await _cacheService.IncrementAsync(ViewsKey(id));
+    // Redis command: INCR "post:{id}:views"
 
     return Ok(new { views = newCount });
 }
@@ -1063,7 +1070,7 @@ public async Task<IActionResult> IncrementView(string id)
 - [ ] Gọi `GET /api/posts/{id}` lần 1 → kiểm tra Redis có key `post:{id}` (dùng `redis-cli GET "post:{id}"`)
 - [ ] Gọi `GET /api/posts/{id}` lần 2 → response nhanh hơn hẳn
 - [ ] Gọi `PUT /api/posts/{id}` → kiểm tra `redis-cli GET "post:{id}"` → nil (đã bị xóa)
-- [ ] Gọi `POST /api/posts/{id}/view` nhiều lần → `redis-cli GET "post_views:{id}"` tăng dần
+- [ ] Gọi `POST /api/posts/{id}/view` nhiều lần → `redis-cli GET "post:{id}:views"` tăng dần
 - [ ] Đăng nhập → `redis-cli HGETALL "session:{guid}"` → thấy userId, username, loginAt
 - [ ] Đợi 30 phút (hoặc `redis-cli EXPIRE "session:{guid}" 5`) → session tự hết hạn
 
@@ -1165,6 +1172,8 @@ Chạy:    python scripts/SeedPosts/seed.py
 """
 
 from pymongo import MongoClient
+from bson import ObjectId
+from slugify import slugify          # pip install python-slugify
 from faker import Faker
 from datetime import datetime
 import random
@@ -1175,6 +1184,15 @@ fake = Faker('vi_VN')  # Faker tiếng Việt
 client = MongoClient("mongodb://localhost:27017")
 db = client["newsdb"]
 collection = db["posts"]
+categories = db["categories"]
+
+# Seed chuyên mục TRƯỚC bài viết — API tạo/sửa bài viết kiểm tra categoryId có tồn tại thật
+categories.delete_many({})
+category_ids = categories.insert_many([
+    {"name": "Thời sự",   "slug": "thoi-su",   "description": None, "createdAt": datetime.utcnow()},
+    {"name": "Thể thao",  "slug": "the-thao",  "description": None, "createdAt": datetime.utcnow()},
+    {"name": "Công nghệ", "slug": "cong-nghe", "description": None, "createdAt": datetime.utcnow()},
+]).inserted_ids
 
 # Xóa bài cũ (nếu muốn reset)
 # collection.delete_many({})
@@ -1182,14 +1200,20 @@ collection = db["posts"]
 posts = []
 for i in range(100):
     created = fake.date_time_this_year()
+    title = fake.sentence(nb_words=8)
     posts.append({
-        "Title": fake.sentence(nb_words=8),
-        "Content": "\n\n".join(fake.paragraphs(nb=random.randint(3, 6))),
-        "ImageUrl": f"https://picsum.photos/seed/{i + 1}/800/400",
-        "AuthorId": None,
-        "Views": random.randint(0, 500),
-        "CreatedAt": created,
-        "UpdatedAt": created,
+        # Tên field camelCase — xem AGENTS.md. Ghi sai tên thì API đọc ra bài rỗng tiêu đề.
+        "title": title,
+        "slug": f"{slugify(title)}-{i}",           # slug phải UNIQUE (có unique index)
+        "content": "\n\n".join(fake.paragraphs(nb=random.randint(3, 6))),
+        "imageUrl": f"https://picsum.photos/seed/{i + 1}/800/400",
+        "categoryId": ObjectId(random.choice(category_ids)),  # ObjectId, KHÔNG phải str
+        "authorId": None,
+        "views": random.randint(0, 500),
+        "isDeleted": False,
+        "deletedAt": None,
+        "createdAt": created,
+        "updatedAt": created,
     })
 
 result = collection.insert_many(posts)
@@ -1310,7 +1334,7 @@ python scripts/Benchmark/benchmark.py
 | 6 | SV3 | Load lại bài viết | Response `~50-200ms` + nội dung MỚI | Cache Miss lại → lấy dữ liệu mới từ MongoDB |
 | 7 | SV3 | Mở Redis Insight → tìm key `session:*` | Thấy Hash: userId, username, loginAt | **Hashes** lưu Session |
 | 8 | SV3 | Quan sát TTL của session key | TTL đếm ngược (1800 → 1799 → ...) | **TTL/EXPIRE** hoạt động |
-| 9 | SV2 | Click vào bài viết nhiều lần | `post_views:{id}` tăng dần | **INCR** bộ đếm real-time |
+| 9 | SV2 | Click vào bài viết nhiều lần | `post:{id}:views` tăng dần | **INCR** bộ đếm real-time |
 
 ---
 
