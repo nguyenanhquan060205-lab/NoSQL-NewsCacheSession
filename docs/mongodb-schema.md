@@ -1,18 +1,34 @@
 # Thiết kế schema MongoDB
 
-Database dùng 3 collection: `users`, `categories`, `articles`.
+Database `newsdb` dùng 3 collection: `users`, `categories`, `posts`.
+
+## Quy ước đặt tên field
+
+Tên field trong MongoDB dùng **camelCase** (`createdAt`, `passwordHash`, `isDeleted`).
+Đây là quy ước bắt buộc của cả nhóm, được ép trong code bằng `[BsonElement("...")]`
+trên từng property của model C# — không dựa vào tên property mặc định (vốn là
+PascalCase). Lý do:
+
+- Khớp với JSON mà API trả về frontend → đọc document trong Compass/Studio 3T thấy
+  giống hệt response, dễ đối chiếu khi debug.
+- Khớp với script seed viết bằng Python (`scripts/SeedPosts/seed.py`) → SV3 nạp dữ
+  liệu bằng đúng tên field này, không cần map lại.
+
+> ⚠️ Nếu ghi dữ liệu vào Mongo bằng tên field khác (PascalCase hay snake_case), API
+> sẽ deserialize ra giá trị rỗng: bài viết không có tiêu đề, `createdAt` = `01/01/0001`.
 
 ## users
 ```json
 {
   "_id": "ObjectId",
   "username": "string, unique",
-  "password_hash": "string",
-  "email": "string",
+  "passwordHash": "string (BCrypt)",
   "role": "admin | user",
-  "created_at": "datetime"
+  "createdAt": "datetime"
 }
 ```
+
+`role` mặc định là `"user"`; `"admin"` dùng cho trang quản trị bài viết (SCRUM-29).
 
 ## categories
 ```json
@@ -20,40 +36,63 @@ Database dùng 3 collection: `users`, `categories`, `articles`.
   "_id": "ObjectId",
   "name": "string",
   "slug": "string, unique",
-  "description": "string"
+  "description": "string | null",
+  "createdAt": "datetime"
 }
 ```
 
-## articles
+## posts
 ```json
 {
   "_id": "ObjectId",
   "title": "string",
   "slug": "string, unique",
   "content": "string",
-  "category_id": "ObjectId, ref categories",
-  "author_id": "ObjectId, ref users",
-  "status": "draft | published",
+  "imageUrl": "string | null",
+  "categoryId": "ObjectId | null, ref categories",
+  "authorId": "ObjectId | null, ref users",
   "views": "integer, default 0",
-  "is_deleted": "boolean, default false",
-  "deleted_at": "datetime | null",
-  "created_at": "datetime",
-  "updated_at": "datetime"
+  "isDeleted": "boolean, default false",
+  "deletedAt": "datetime | null",
+  "createdAt": "datetime",
+  "updatedAt": "datetime"
 }
 ```
 
-`is_deleted` và `deleted_at` phục vụ cơ chế soft delete: API xóa chỉ đánh dấu bài
-viết đã bị xóa, không xóa vật lý document khỏi MongoDB. Các truy vấn đọc phải lọc
-`is_deleted != true` để tương thích với dữ liệu cũ chưa có trường này.
+`categoryId` và `authorId` lưu **dạng ObjectId** (không phải string) để đúng nghĩa
+reference — script seed phải bọc `ObjectId(...)` khi ghi. `authorId` được phép null
+với dữ liệu seed (bài viết không có tác giả cụ thể).
+
+`views` là lượt xem **đã chốt** vào MongoDB. Số đếm thời gian thực nằm ở Redis
+(`post:{id}:views`, dùng `INCR`) và được job của SV2 flush ngược về field này —
+xem `redis-keyspace.md`.
+
+`isDeleted` và `deletedAt` phục vụ cơ chế soft delete: API xóa chỉ đánh dấu bài viết
+đã bị xóa, không xóa vật lý document khỏi MongoDB. Các truy vấn đọc lọc bằng
+`isDeleted != true` (chứ không phải `isDeleted == false`) để tương thích với document
+cũ chưa có trường này.
 
 ## Index cần tạo
+
+Được tạo tự động lúc khởi động ứng dụng bởi `Data/MongoIndexInitializer.cs`.
+
 | Collection | Field | Loại | Lý do |
 |---|---|---|---|
-| articles | slug | unique | tra cứu bài viết theo URL |
-| articles | category_id | thường | lọc danh sách bài viết theo chuyên mục |
-| users | username | unique | đăng nhập, tránh trùng tài khoản |
+| posts | `slug` | unique | tra cứu bài viết theo URL; chặn trùng slug ở tầng DB vì hàm sinh slug chỉ chống trùng bằng query (còn race condition) |
+| posts | `categoryId` + `createdAt` desc | compound | lọc danh sách theo chuyên mục rồi sắp bài mới nhất (SCRUM-18) |
+| posts | `createdAt` desc | thường | trang chủ sắp bài mới nhất trước |
+| users | `username` | unique | đăng nhập; chặn trùng tài khoản ở tầng DB, không chỉ dựa vào kiểm tra trong `AuthController.Register` |
+| categories | `slug` | unique | URL chuyên mục thân thiện |
 
 ## Quan hệ dữ liệu
-- Một `article` thuộc về một `category` (qua `category_id`).
-- Một `article` có một tác giả (qua `author_id` trỏ tới `users`).
-- Dùng reference (ObjectId) thay vì embed toàn bộ document, vì `users` và `categories` được nhiều `articles` dùng chung — embed sẽ gây trùng lặp dữ liệu khi category/tên tác giả thay đổi.
+
+- Một `post` thuộc về một `category` (qua `categoryId`).
+- Một `post` có một tác giả (qua `authorId` trỏ tới `users`).
+
+Dùng **reference** (ObjectId) thay vì embed toàn bộ document, vì `users` và
+`categories` được nhiều `posts` dùng chung — embed sẽ gây trùng lặp dữ liệu và phải
+cập nhật hàng loạt khi tên chuyên mục hoặc tên tác giả thay đổi.
+
+Đánh đổi: đọc bài viết kèm tên chuyên mục/tác giả cần thêm một truy vấn (hoặc
+`$lookup`). Với luồng Cache-Aside thì chi phí này chỉ trả một lần rồi được cache lại
+trong Redis, nên chấp nhận được.
