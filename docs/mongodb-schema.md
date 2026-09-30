@@ -28,7 +28,21 @@ PascalCase). Lý do:
 }
 ```
 
-`role` mặc định là `"user"`; `"admin"` dùng cho trang quản trị bài viết (SCRUM-29).
+`role` mặc định là `"user"`. **Tài khoản đăng ký đầu tiên của hệ thống tự động thành
+`"admin"`** (bootstrap admin) — nhờ vậy luôn có ít nhất một người quản trị mà không phải
+chèn tay vào DB, cũng không để lọ mật khẩu admin trong file cấu hình (vịn của cách
+seed sẵn tài khoản admin/admin123).
+
+Muốn cấp quyền admin cho người khác về sau:
+
+```js
+db.users.updateOne({ username: "ten_tai_khoan" }, { $set: { role: "admin" } })
+```
+
+Quyền được dùng ở: `GET/DELETE /api/auth/sessions` (trang quản trị phiên, SCRUM-31),
+`POST /api/categories`, và quyền sửa/xóa bài viết của người khác (SCRUM-29).
+`role` cũng được ghi vào Hash `session:{id}` lúc đăng nhập để kiểm tra quyền không
+tốn query MongoDB — xem `redis-keyspace.md`.
 
 ## categories
 ```json

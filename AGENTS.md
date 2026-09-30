@@ -36,12 +36,23 @@ bài nào.
 | `session:{sessionId}` | Hash | 30 phút, sliding |
 | `post:{postId}` | String (JSON) | 10 phút |
 | `post:{postId}:views` | String (số) | không TTL |
-| `posts:cat:{categoryId}:p{n}` | String (JSON list) | 3 phút |
+| `posts:cat:{categoryId}:p{n}:v{ver}` | String (JSON list) | 3 phút |
+| `posts:ver` | String (số) | không TTL — `INCR` để vô hiệu hóa cache danh sách |
 | `lock:post:{postId}` | String | 5 giây (`SET NX PX 5000`) |
 
 Trong C# **không ghép chuỗi key bằng tay**. Dùng helper có sẵn ở đầu
 `Controllers/PostsController.cs`: `CacheKey(id)`, `ViewsKey(id)`, `CachePrefix`,
-`ListCachePrefix`. Session key do `Services/RedisSessionService.cs` tự dựng.
+`ListCachePrefix`, `ListVersionKey`, `BumpListVersionAsync()`.
+Session key do `Services/RedisSessionService.cs` và `Services/CurrentUserService.cs` dựng.
+
+Field trong Hash `session:{sessionId}`: `userId`, `username`, `loginAt` (SV2 ghi khi
+tạo phiên) + `role`, `lastActive` (SV1 ghi qua `CurrentUserService.TouchAsync`).
+`role` nằm sẵn trong session nên kiểm tra quyền **không tốn query MongoDB**.
+
+**Cache danh sách dùng số phiên bản, không SCAN+DEL.** Key là
+`posts:cat:{categoryId}:p{page}:v{ver}` với `ver` đọc từ `posts:ver`.
+Create/Update/Delete đã `INCR posts:ver` sẵn — một lệnh O(1) làm mọi key cũ không
+còn ai tra tới, thay vì phải SCAN tìm rồi DEL từng key.
 
 Đổi key thì phải sửa đồng thời: helper trong code **và** bảng trong
 `docs/redis-keyspace.md`. Thầy chấm 1.5đ bằng cách đối chiếu doc với RedisInsight.
@@ -79,6 +90,9 @@ Controllers/AuthController.cs
 Controllers/PostsController.cs   (TRỪ GetById và IncrementView — của SV2)
 Controllers/CategoriesController.cs
 DTOs/Auth/*, DTOs/Posts/*, DTOs/Categories/*
+Services/ICurrentUserService.cs, Services/CurrentUserService.cs
+Services/ISessionQueryService.cs, Services/RedisSessionQueryService.cs
+Utils/SlugHelper.cs
 Data/MongoIndexInitializer.cs
 docs/mongodb-schema.md, docs/redis-keyspace.md, docs/chot-thiet-ke-sv1.md
 ```
@@ -91,6 +105,9 @@ Services/ICacheService.cs, Services/RedisCacheService.cs
 Services/ISessionService.cs, Services/RedisSessionService.cs
 Middleware/SessionAuthMiddleware.cs
 Controllers/PostsController.cs → CHỈ 2 method GetById và IncrementView
+
+`ISessionService` (SV2) lo **vòng đời** một phiên; `ISessionQueryService` (SV1) chỉ
+**liệt kê** phiên cho trang quản trị. Tách theo hướng CQRS nên không đụng cùng file.
 ```
 
 ### SV3 — Nguyễn Xuân Định (Fullstack Integrator & DB Tester)
@@ -108,19 +125,45 @@ Program.cs, appsettings.json, Data/MongoContext.cs
 docker-compose.yml, README.md, .gitignore
 ```
 
-## 5. Việc còn thiếu (đang chờ ai làm)
+## 5. Xác thực & phân quyền
+
+Controller **không tự đọc cookie/session** — dùng `ICurrentUserService.GetAsync(HttpContext)`,
+trả `CurrentUser(SessionId, UserId, Username, Role, LoginAt)` với `IsAdmin` sẵn, hoặc
+null nếu chưa đăng nhập.
+
+**Tài khoản đăng ký đầu tiên tự động là admin** (bootstrap admin) — không có tài khoản
+admin cài sẵn, không để lộ mật khẩu admin trong file cấu hình.
+
+Quyền admin dùng ở: `GET`/`DELETE /api/auth/sessions`, `POST /api/categories`, và
+sửa/xóa bài viết của người khác. 100 bài seed có `authorId = null` nên **chỉ admin
+sửa/xóa được**.
+
+**Hợp đồng cho `SessionAuthMiddleware` (SV2):** `CurrentUserService` có đường tắt đọc
+`HttpContext.Items` để khỏi `HGETALL` lần hai trong cùng request. Middleware phải gán
+**đủ bộ**, thiếu `Role` là đường tắt bị bỏ qua:
+
+```csharp
+context.Items["UserId"]   = session["userId"];
+context.Items["Username"] = session["username"];
+context.Items["Role"]     = session["role"];     // BẮT BUỘC
+context.Items["LoginAt"]  = session["loginAt"];  // tuỳ chọn
+```
+
+## 6. Việc còn thiếu (đang chờ ai làm)
 
 | Việc | Ai | Ghi chú |
 |---|---|---|
-| `ICacheService.RemoveByPrefixAsync(prefix)` | SV2 | Thiếu thì `Create`/`Update`/`Delete` không xóa được cache danh sách `posts:cat:*` → đăng bài mới xong trang chủ đứng im 3 phút |
-| Session hash thêm `role`, `lastActive` | SV2 | `Models/User.cs` đã có `Role`; trang admin (SCRUM-29) và trang quản lý phiên (SCRUM-31) cần |
-| `GetById` ghi đè `PostResponse.Views` bằng `GET post:{id}:views` | SV2 | Không làm thì UI hiện views đứng im trong khi RedisInsight nhảy số |
-| TTL session vào `appsettings.json` | SV2 | Đang hardcode 30 phút ở `AuthController.SessionTtl`; middleware hardcode lần nữa là lệch |
-| `builder.Services.AddHostedService<MongoIndexInitializer>();` trong `Program.cs` | SV2 | Thiếu dòng này thì index Mongo không được tạo |
+| `SessionAuthMiddleware` (đang là stub) | SV2 | Gán đủ bộ `HttpContext.Items` như hợp đồng trên + refresh TTL sliding |
+| `GetById` — luồng Cache-Aside + lock chống stampede | SV2 | Nhớ ghi đè `PostResponse.Views` bằng `post:{id}:views` nếu key tồn tại |
+| `IncrementView` — `INCR post:{id}:views` + job flush về `posts.views` | SV2 | |
+| Cache danh sách trang chủ (SCRUM-26) | SV2 | Đọc `posts:ver` rồi ghép vào key; **không** cần thêm method vào `ICacheService` |
+| Header `X-Cache: HIT\|MISS` trong `GetById` | SV2 | SCRUM-38 của SV3 cần để hiện badge — chốt tên header rồi nói cho SV3 |
+| TTL session vào `appsettings.json` (`SessionSettings:TtlMinutes`) | SV2 | Đang hardcode 30 phút ở `AuthController.SessionTtl` |
 | Seed collection `categories` | SV3 | API tạo/sửa bài kiểm tra `categoryId` tồn tại thật, không có chuyên mục thì trả 400 |
 | `api.js` truyền `categoryId` vào `GET /api/posts` | SV3 | SCRUM-18 đã hỗ trợ lọc nhưng frontend chưa gọi |
+| Upload ảnh bài viết (SCRUM-39) | SV3 | Chưa chốt: dùng URL ngoài (picsum) hay cần endpoint upload file ở backend |
 
-## 6. Quy ước làm việc
+## 7. Quy ước làm việc
 
 - **Branch**: `SCRUM-<số>-<mô-tả-ngắn>`, tách từ `main`. Merge qua Pull Request.
 - **Commit**: `feat(SCRUM-16): API tạo và sửa bài viết` — tiếng Việt, có mã ticket.
@@ -129,7 +172,7 @@ docker-compose.yml, README.md, .gitignore
 - Trước khi sửa: `git fetch --all` rồi kiểm tra branch người khác, tránh đổi thiết kế
   khi người khác đã build lên trên nền cũ.
 
-## 7. Chạy dự án
+## 8. Chạy dự án
 
 ```bash
 docker compose up -d                                  # MongoDB + Redis + RedisInsight
@@ -143,7 +186,7 @@ Mongo: `mongodb://localhost:27017`, database `newsdb`. Redis: `localhost:6379`.
 > ⚠️ Dữ liệu test cũ (ghi trước 30/09/2026) dùng tên field PascalCase nên **không
 > đọc được nữa**. Cần `db.posts.drop()`, `db.users.drop()` rồi seed lại.
 
-## 8. Barem chấm điểm — để biết việc gì thực sự quan trọng
+## 9. Barem chấm điểm — để biết việc gì thực sự quan trọng
 
 | Phần | Điểm |
 |---|---|
