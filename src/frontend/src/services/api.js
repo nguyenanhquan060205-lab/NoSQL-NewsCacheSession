@@ -29,9 +29,15 @@ export const authApi = {
 // ========== POSTS API ==========
 
 export const postsApi = {
-  // TODO [SV3]: Gọi GET /api/posts?page=&pageSize=
-  getAll: (page = 1, pageSize = 10) =>
-    api.get('/posts', { params: { page, pageSize } }),
+  // Danh sách có phân trang và có thể lọc theo chuyên mục.
+  getAll: (page = 1, pageSize = 10, categoryId = '') =>
+    api.get('/posts', {
+      params: {
+        page,
+        pageSize,
+        ...(categoryId ? { categoryId } : {}),
+      },
+    }),
 
   // TODO [SV3]: Gọi GET /api/posts/:id — ĐÂY LÀ ENDPOINT CACHE-ASIDE
   getById: (id) =>
@@ -52,6 +58,12 @@ export const postsApi = {
   // TODO [SV3]: Gọi POST /api/posts/:id/view — INCR lượt xem
   incrementView: (id) =>
     api.post(`/posts/${id}/view`),
+};
+
+// ========== CATEGORIES API ==========
+
+export const categoriesApi = {
+  getAll: () => api.get('/categories'),
 };
 
 export default api;

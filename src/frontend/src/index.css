@@ -1,1 +1,62 @@
 @import "tailwindcss";
+
+:root {
+  font-family: Arial, "Helvetica Neue", Helvetica, system-ui, sans-serif;
+  color: #18181b;
+  background: #ffffff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100dvh;
+  margin: 0;
+  background: #ffffff;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgb(185 28 28 / 35%);
+  outline-offset: 3px;
+}
+
+::selection {
+  color: #ffffff;
+  background: #b91c1c;
+}
+
+.font-editorial {
+  font-family: Arial, "Helvetica Neue", Helvetica, system-ui, sans-serif;
+  letter-spacing: -0.025em;
+}
+
+.news-nav-scrollbar {
+  scrollbar-width: none;
+}
+
+.news-nav-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
