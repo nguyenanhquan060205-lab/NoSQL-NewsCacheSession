@@ -1,29 +1,29 @@
 Sprint,Sprint Dates,Key,Task,Status,Assignee,Role
 Sprint 1,23 Sep - 24 Sep,SCRUM-13,"API dang ky, dang nhap, dang xuat",Done,Nhu,SV1 - Data Architect & CRUD Lead
-Sprint 1,23 Sep - 24 Sep,SCRUM-14,Luu session bang Redis Hashes + EXPIRE,In Progress,Quan,SV2 - Advanced Query Specialist
-Sprint 1,23 Sep - 24 Sep,SCRUM-15,Middleware xac thuc + sliding expiration,In Progress,Quan,SV2 - Advanced Query Specialist
+Sprint 1,23 Sep - 24 Sep,SCRUM-14,Luu session bang Redis Hashes + EXPIRE,Done,Quan,SV2 - Advanced Query Specialist
+Sprint 1,23 Sep - 24 Sep,SCRUM-15,Middleware xac thuc + sliding expiration,Done,Quan,SV2 - Advanced Query Specialist
 Sprint 1,23 Sep - 24 Sep,SCRUM-16,API tao va sua bai viet,Done,Nhu,SV1 - Data Architect & CRUD Lead
 Sprint 1,23 Sep - 24 Sep,SCRUM-17,API xoa bai viet (soft delete),Done,Nhu,SV1 - Data Architect & CRUD Lead
 Sprint 1,23 Sep - 24 Sep,SCRUM-18,API danh sach bai viet: phan trang + loc chuyen muc,Done,Nhu,SV1 - Data Architect & CRUD Lead
 Sprint 1,23 Sep - 24 Sep,SCRUM-19,API chi tiet bai viet theo slug (ban chua cache),Done,Nhu,SV1 - Data Architect & CRUD Lead
-Sprint 1,23 Sep - 24 Sep,SCRUM-20,Wrapper cache client + hook do metrics,In Progress,Quan,SV2 - Advanced Query Specialist
-Sprint 1,23 Sep - 24 Sep,SCRUM-21,Hien thuc luong Cache-Aside cho doc bai viet,In Progress,Quan,SV2 - Advanced Query Specialist
+Sprint 1,23 Sep - 24 Sep,SCRUM-20,Wrapper cache client + hook do metrics,Done,Quan,SV2 - Advanced Query Specialist
+Sprint 1,23 Sep - 24 Sep,SCRUM-21,Hien thuc luong Cache-Aside cho doc bai viet,Done,Quan,SV2 - Advanced Query Specialist
 Sprint 1,23 Sep - 24 Sep,SCRUM-22,Layout chung + trang chu danh sach tin,In Progress,Dinh,SV3 - Fullstack Integrator & DB Tester
-Sprint 2,23 Sep - 29 Sep,SCRUM-23,Cache Invalidation khi sua/xoa bai viet,Idea,Quan,SV2 - Advanced Query Specialist
-Sprint 2,23 Sep - 29 Sep,SCRUM-24,Co che khoa chong cache stampede (SET NX PX),Idea,Quan,SV2 - Advanced Query Specialist
-Sprint 2,23 Sep - 29 Sep,SCRUM-25,Bo dem luot xem realtime bang INCR + job flush ve MongoDB,Idea,Quan,SV2 - Advanced Query Specialist
+Sprint 2,23 Sep - 29 Sep,SCRUM-23,Cache Invalidation khi sua/xoa bai viet,Done,Quan,SV2 - Advanced Query Specialist
+Sprint 2,23 Sep - 29 Sep,SCRUM-24,Co che khoa chong cache stampede (SET NX PX),Done,Quan,SV2 - Advanced Query Specialist
+Sprint 2,23 Sep - 29 Sep,SCRUM-25,Bo dem luot xem realtime bang INCR + job flush ve MongoDB,Done,Quan,SV2 - Advanced Query Specialist
 Sprint 2,23 Sep - 29 Sep,SCRUM-26,Cache danh sach trang chu voi TTL ngan,Idea,Quan,SV2 - Advanced Query Specialist
 Sprint 2,23 Sep - 29 Sep,SCRUM-27,Trang chi tiet bai viet + luot xem realtime,Idea,Dinh,SV3 - Fullstack Integrator & DB Tester
-Sprint 3,30 Sep - 5 Oct,SCRUM-28,Viet chuong nguyen ly Cache-Aside Pattern,Idea,Quan,SV2 - Advanced Query Specialist
+Sprint 3,30 Sep - 5 Oct,SCRUM-28,Viet chuong nguyen ly Cache-Aside Pattern,Done,Quan,SV2 - Advanced Query Specialist
 Sprint 3,30 Sep - 5 Oct,SCRUM-29,Trang admin CRUD bai viet,Idea,Dinh,SV3 - Fullstack Integrator & DB Tester
 Sprint 3,30 Sep - 5 Oct,SCRUM-30,Trang dang nhap / dang ky,Idea,Dinh,SV3 - Fullstack Integrator & DB Tester
 Sprint 3,30 Sep - 5 Oct,SCRUM-31,Trang quan ly phien dang hoat dong,Idea,Dinh,SV3 - Fullstack Integrator & DB Tester
 Sprint 4,6 Oct - 12 Oct,SCRUM-32,Script seed 100+ bai viet that co hinh anh,Idea,Dinh,SV3 - Fullstack Integrator & DB Tester
 Sprint 4,6 Oct - 12 Oct,SCRUM-33,Viet chuong thiet ke mo hinh du lieu Redis + co che khoa,Idea,Nhu,SV1 - Data Architect & CRUD Lead
-Sprint 4,6 Oct - 12 Oct,SCRUM-34,Endpoint /cache/stats cho ty le hit/miss,Idea,Quan,SV2 - Advanced Query Specialist
-Sprint 4,6 Oct - 12 Oct,SCRUM-35,Test tu dong cho Cache Invalidation,Idea,Quan,SV2 - Advanced Query Specialist
+Sprint 4,6 Oct - 12 Oct,SCRUM-34,Endpoint /cache/stats cho ty le hit/miss,Done,Quan,SV2 - Advanced Query Specialist
+Sprint 4,6 Oct - 12 Oct,SCRUM-35,Test tu dong cho Cache Invalidation,Done,Quan,SV2 - Advanced Query Specialist
 Sprint 4,6 Oct - 12 Oct,SCRUM-36,Script seed 20-50 session/cache key voi TTL khac nhau,Idea,Dinh,SV3 - Fullstack Integrator & DB Tester (reassigned from Quan - data seeding is SV3's job per de bai)
-Sprint 4,6 Oct - 12 Oct,SCRUM-37,Test tu dong cho TTL va session expiry,Idea,Quan,SV2 - Advanced Query Specialist
+Sprint 4,6 Oct - 12 Oct,SCRUM-37,Test tu dong cho TTL va session expiry,Done,Quan,SV2 - Advanced Query Specialist
 Sprint 4,6 Oct - 12 Oct,SCRUM-38,Badge hien thi CACHE HIT/MISS va response time tren UI,Idea,Dinh,SV3 - Fullstack Integrator & DB Tester
 Sprint 4,6 Oct - 12 Oct,SCRUM-39,Upload va quan ly hinh anh bai viet,Idea,Dinh,SV3 - Fullstack Integrator & DB Tester
 Sprint 4,6 Oct - 12 Oct,SCRUM-40,Benchmark Apache Bench / k6: lan 1 vs lan 2,Idea,Dinh,SV3 - Fullstack Integrator & DB Tester
