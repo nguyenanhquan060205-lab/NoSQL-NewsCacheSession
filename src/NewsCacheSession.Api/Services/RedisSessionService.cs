@@ -13,18 +13,24 @@ public class RedisSessionService : ISessionService
 
     private static string Key(string sessionId) => $"session:{sessionId}";
 
-    public async Task CreateSessionAsync(string sessionId, string userId, string username, TimeSpan ttl)
+    public async Task CreateSessionAsync(string sessionId, string userId, string username, string role, TimeSpan ttl)
     {
         var key = Key(sessionId);
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
         var entries = new HashEntry[]
         {
             new("userId", userId),
             new("username", username),
-            new("loginAt", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString())
+            new("role", role),
+            new("loginAt", now),
+            new("lastActive", now)
         };
         await _db.HashSetAsync(key, entries);
         await _db.KeyExpireAsync(key, ttl);
     }
+
+    public Task CreateSessionAsync(string sessionId, string userId, string username, TimeSpan ttl) =>
+        CreateSessionAsync(sessionId, userId, username, "user", ttl);
 
     public async Task<Dictionary<string, string>?> GetSessionAsync(string sessionId)
     {
