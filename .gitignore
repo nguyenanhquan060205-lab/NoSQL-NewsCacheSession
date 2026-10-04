@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# AgentKit local skills (only keep project rules and custom backend skill)
+.agents/skills/*
+!.agents/skills/ak-dotnet-backend/
