@@ -24,6 +24,7 @@ public class PostsController : ControllerBase
     private const string ListCachePrefix = "posts:cat:";     // posts:cat:{catId}:p{n}:v{ver} — SV2 (SCRUM-26)
     private const string ListVersionKey = "posts:ver";       // bộ đếm phiên bản cache danh sách
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan ListCacheTtl = TimeSpan.FromMinutes(3);
 
     /// <summary>Key cache nội dung bài viết: <c>post:{id}</c>.</summary>
     private static string CacheKey(string id) => CachePrefix + id;
@@ -57,7 +58,8 @@ public class PostsController : ControllerBase
     }
 
     /// <summary>
-    /// Lấy danh sách bài viết (từ MongoDB, có phân trang + lọc theo chuyên mục).
+    /// Lấy danh sách bài viết (từ MongoDB, có phân trang + lọc theo chuyên mục) — ⭐ Cache-Aside Pattern (SCRUM-26).
+    /// Dùng version key posts:ver để vô hiệu hóa O(1) khi có bài viết mới/sửa/xóa. TTL 3 phút.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAll(
@@ -68,12 +70,31 @@ public class PostsController : ControllerBase
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
+        if (!string.IsNullOrWhiteSpace(categoryId) && !ObjectId.TryParse(categoryId, out _))
+            return BadRequest(new { message = "ID chuyên mục không hợp lệ." });
+
+        // 1. Đọc phiên bản danh sách hiện tại từ Redis
+        var verStr = await _cacheService.GetAsync(ListVersionKey);
+        var ver = string.IsNullOrEmpty(verStr) ? "1" : verStr;
+        var catKey = string.IsNullOrWhiteSpace(categoryId) ? "all" : categoryId;
+        var cacheKey = $"posts:cat:{catKey}:p{page}:v{ver}";
+
+        // 2. Thử đọc từ Redis Cache
+        var cached = await _cacheService.GetAsync(cacheKey);
+        if (!string.IsNullOrEmpty(cached))
+        {
+            var cachedResult = JsonSerializer.Deserialize<PagedPostsResponse>(cached);
+            if (cachedResult != null)
+            {
+                Response.Headers["X-Cache"] = "HIT";
+                return Ok(cachedResult);
+            }
+        }
+
+        // 3. Cache Miss: Đọc từ MongoDB
         var filter = NotDeleted;
         if (!string.IsNullOrWhiteSpace(categoryId))
         {
-            if (!ObjectId.TryParse(categoryId, out _))
-                return BadRequest(new { message = "ID chuyên mục không hợp lệ." });
-
             filter &= Builders<Post>.Filter.Eq(p => p.CategoryId, categoryId);
         }
 
@@ -84,14 +105,20 @@ public class PostsController : ControllerBase
             .Limit(pageSize)
             .ToListAsync();
 
-        return Ok(new PagedPostsResponse
+        var response = new PagedPostsResponse
         {
             Items = posts.Select(PostResponse.FromModel).ToList(),
             Page = page,
             PageSize = pageSize,
             TotalItems = totalItems,
             TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
-        });
+        };
+
+        // 4. Ghi ngược vào Redis kèm TTL 3 phút
+        await _cacheService.SetAsync(cacheKey, JsonSerializer.Serialize(response), ListCacheTtl);
+        Response.Headers["X-Cache"] = "MISS";
+
+        return Ok(response);
     }
 
     /// <summary>

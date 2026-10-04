@@ -12,7 +12,7 @@ Sprint 1,23 Sep - 24 Sep,SCRUM-22,Layout chung + trang chu danh sach tin,In Prog
 Sprint 2,23 Sep - 29 Sep,SCRUM-23,Cache Invalidation khi sua/xoa bai viet,Done,Quan,SV2 - Advanced Query Specialist
 Sprint 2,23 Sep - 29 Sep,SCRUM-24,Co che khoa chong cache stampede (SET NX PX),Done,Quan,SV2 - Advanced Query Specialist
 Sprint 2,23 Sep - 29 Sep,SCRUM-25,Bo dem luot xem realtime bang INCR + job flush ve MongoDB,Done,Quan,SV2 - Advanced Query Specialist
-Sprint 2,23 Sep - 29 Sep,SCRUM-26,Cache danh sach trang chu voi TTL ngan,Idea,Quan,SV2 - Advanced Query Specialist
+Sprint 2,23 Sep - 29 Sep,SCRUM-26,Cache danh sach trang chu voi TTL ngan,Done,Quan,SV2 - Advanced Query Specialist
 Sprint 2,23 Sep - 29 Sep,SCRUM-27,Trang chi tiet bai viet + luot xem realtime,Idea,Dinh,SV3 - Fullstack Integrator & DB Tester
 Sprint 3,30 Sep - 5 Oct,SCRUM-28,Viet chuong nguyen ly Cache-Aside Pattern,Done,Quan,SV2 - Advanced Query Specialist
 Sprint 3,30 Sep - 5 Oct,SCRUM-29,Trang admin CRUD bai viet,Idea,Dinh,SV3 - Fullstack Integrator & DB Tester
