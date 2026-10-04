@@ -15,24 +15,28 @@ public class SessionAuthMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, ISessionService sessionService)
+    public async Task InvokeAsync(HttpContext context, ISessionService sessionService, IConfiguration config)
     {
-        // TODO [SV2]: Implement Session Authentication Middleware
-        // 1. Đọc SessionId từ Cookie "SessionId" hoặc Header "X-Session-Id"
-        //    var sessionId = context.Request.Cookies["SessionId"]
-        //                 ?? context.Request.Headers["X-Session-Id"].FirstOrDefault();
-        //
-        // 2. Nếu có sessionId → gọi sessionService.GetSessionAsync(sessionId)
-        //
-        // 3. Nếu session hợp lệ (không null):
-        //    - context.Items["UserId"] = session["userId"];
-        //    - context.Items["Username"] = session["username"];
-        //    - (Tuỳ chọn) Refresh TTL: await sessionService.RefreshSessionAsync(sessionId, TTL)
-        //
-        // 4. Nếu không có session → không làm gì, để Controller tự quyết 401
-        //
-        // 5. Gọi tiếp pipeline:
-        //    await _next(context);
+        var sessionId = context.Request.Cookies[CurrentUserService.SessionCookieName]
+                     ?? context.Request.Headers[CurrentUserService.SessionHeaderName].FirstOrDefault();
+
+        if (!string.IsNullOrWhiteSpace(sessionId))
+        {
+            var session = await sessionService.GetSessionAsync(sessionId);
+            if (session != null && session.TryGetValue("userId", out var userId) && !string.IsNullOrWhiteSpace(userId))
+            {
+                // Hợp đồng cho CurrentUserService: gán đủ bộ UserId, Username, Role, LoginAt
+                context.Items["UserId"] = userId;
+                context.Items["Username"] = session.GetValueOrDefault("username", string.Empty);
+                context.Items["Role"] = session.GetValueOrDefault("role", "user");
+                context.Items["LoginAt"] = session.GetValueOrDefault("loginAt", string.Empty);
+
+                // Sliding Expiration: đọc cấu hình TTL và gia hạn thêm
+                var ttlMinutes = config.GetValue<int>("SessionSettings:TtlMinutes", 30);
+                var ttl = TimeSpan.FromMinutes(ttlMinutes > 0 ? ttlMinutes : 30);
+                await sessionService.RefreshSessionAsync(sessionId, ttl);
+            }
+        }
 
         await _next(context);
     }

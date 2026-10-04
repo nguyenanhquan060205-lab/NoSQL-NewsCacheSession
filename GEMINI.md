@@ -1,6 +1,13 @@
 # Hướng dẫn cho Gemini CLI — NoSQL-NewsCacheSession
 
 👉 **Đọc `AGENTS.md` ở gốc repo trước khi sửa code** — bản đầy đủ nằm ở đó.
+👉 **Đọc và tuân thủ skill [`.agents/skills/ak-dotnet-backend/SKILL.md`](.agents/skills/ak-dotnet-backend/SKILL.md)** trước khi viết code backend/Redis/MongoDB.
+
+## Quy tắc bắt buộc trước khi bắt đầu (Pre-flight Checklist)
+- **Kiểm tra phân công file**: Chỉ sửa file của mình (SV1/SV2/SV3).
+- **Kiểm tra skill**: Kích hoạt `ak-dotnet-backend` cùng các tài liệu trong `references/`.
+- **Hợp đồng dữ liệu**: BSON camelCase + ObjectId, Redis keyspace chuẩn, DB trước Cache sau.
+- **Git**: Kéo `main` mới nhất, làm việc trên branch `SCRUM-...`.
 
 ## Ba quy tắc không được vi phạm
 

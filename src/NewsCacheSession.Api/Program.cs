@@ -43,6 +43,9 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 // Tạo index MongoDB lúc khởi động (posts.slug, users.username, categories.slug) — xem docs/mongodb-schema.md
 builder.Services.AddHostedService<MongoIndexInitializer>();
 
+// Worker định kỳ flush bộ đếm lượt xem từ Redis về MongoDB (Write-Behind - SCRUM-25)
+builder.Services.AddHostedService<ViewCountSyncWorker>();
+
 // Health Checks (MongoDB & Redis)
 builder.Services.AddHealthChecks()
     .AddCheck<MongoHealthCheck>("mongodb", tags: new[] { "db", "nosql" })

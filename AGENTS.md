@@ -10,6 +10,20 @@ vỡ dữ liệu hoặc vỡ kịch bản demo. Chi tiết thiết kế: `docs/m
 
 ---
 
+## 0. ⛔ Quy tắc bắt buộc trước khi bắt đầu bất kỳ tác vụ nào (Pre-flight Checklist)
+
+Mỗi khi AI hoặc thành viên bắt đầu làm một task/tính năng mới, **bắt buộc phải thực hiện đủ 4 bước kiểm tra sau**:
+
+1. **Kiểm tra phân công file (Mục 4)**: Xác định rõ file cần sửa thuộc quyền của ai (SV1, SV2 hay SV3). Tuyệt đối **không sửa file của người khác**, nếu cần thay đổi hãy báo chủ sở hữu file.
+2. **Kích hoạt & Đọc Skill dự án**: Đọc và tuân thủ chặt chẽ skill [`.agents/skills/ak-dotnet-backend/SKILL.md`](.agents/skills/ak-dotnet-backend/SKILL.md) cùng các tài liệu tham khảo trong thư mục `references/` (`redis-patterns.md`, `mongodb-guidelines.md`, `session-and-auth.md`).
+3. **Đối chiếu 3 nguyên tắc dữ liệu cốt lõi (Mục 1, 2, 3)**:
+   - Field MongoDB luôn là `camelCase` với `[BsonElement("...")]` trên từng property; `categoryId` và `authorId` bắt buộc dạng `ObjectId`.
+   - Redis Keyspace chuẩn theo bảng ở Mục 2, dùng helper có sẵn, không nối chuỗi thủ công.
+   - Luồng Cache-Aside: luôn **ghi MongoDB trước, xóa/vô hiệu hóa Redis sau**.
+4. **Kiểm tra Git & Branch (Mục 7)**: Đảm bảo đã kéo code mới nhất từ `main` (`git pull`), làm việc trên đúng branch ticket `SCRUM-<số>-<mô-tả-ngắn>`, commit bằng tiếng Việt và có mã ticket.
+
+---
+
 ## 1. ⛔ Tên field trong MongoDB là camelCase — không được đổi
 
 `title`, `slug`, `content`, `imageUrl`, `categoryId`, `authorId`, `views`,

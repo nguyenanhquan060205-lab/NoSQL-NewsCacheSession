@@ -6,6 +6,7 @@ using NewsCacheSession.Api.DTOs.Posts;
 using NewsCacheSession.Api.Models;
 using NewsCacheSession.Api.Services;
 using NewsCacheSession.Api.Utils;
+using System.Text.Json;
 
 namespace NewsCacheSession.Api.Controllers;
 
@@ -115,24 +116,81 @@ public class PostsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id)
     {
-        // TODO [SV2]: Implement Cache-Aside Pattern
-        // ====== CACHE-ASIDE FLOW ======
-        // Bước 1: Kiểm tra cache
-        //   var cached = await _cacheService.GetAsync(CacheKey(id));
-        //   if (cached != null) → deserialize JSON → return (CACHE HIT)
-        //
-        // Bước 2: Cache Miss → đọc từ MongoDB
-        //   var post = await _mongo.Posts.Find(p => p.Id == id).FirstOrDefaultAsync();
-        //   if (post == null) → return 404
-        //
-        // Bước 3: Ghi ngược vào Redis kèm TTL (EXPIRE)
-        //   var json = JsonSerializer.Serialize(post);
-        //   await _cacheService.SetAsync(CacheKey(id), json, CacheTtl);
-        //
-        // Bước 4: Trả về PostResponse
-        // ==============================
+        if (!ObjectId.TryParse(id, out _))
+            return BadRequest(new { message = "ID bài viết không hợp lệ." });
 
-        throw new NotImplementedException();
+        var cacheKey = CacheKey(id);
+        var viewsKey = ViewsKey(id);
+
+        // 1. Thử đọc từ Redis Cache (Cache HIT)
+        var cached = await _cacheService.GetAsync(cacheKey);
+        if (!string.IsNullOrEmpty(cached))
+        {
+            var cachedPost = JsonSerializer.Deserialize<PostResponse>(cached);
+            if (cachedPost != null)
+            {
+                await OverrideRealtimeViewsAsync(cachedPost, viewsKey);
+                Response.Headers["X-Cache"] = "HIT";
+                return Ok(cachedPost);
+            }
+        }
+
+        // 2. Cache MISS — Chiếm lock phân tán chống Cache Stampede (5 giây)
+        var lockKey = $"lock:{cacheKey}";
+        var lockToken = Guid.NewGuid().ToString("N");
+        var acquired = await _cacheService.AcquireLockAsync(lockKey, lockToken, TimeSpan.FromSeconds(5));
+
+        if (!acquired)
+        {
+            // Có luồng khác đang nạp cache, chờ 50ms rồi thử đọc lại
+            await Task.Delay(50);
+            return await GetById(id);
+        }
+
+        try
+        {
+            // 3. Double-check cache sau khi có lock
+            cached = await _cacheService.GetAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cached))
+            {
+                var cachedPost = JsonSerializer.Deserialize<PostResponse>(cached);
+                if (cachedPost != null)
+                {
+                    await OverrideRealtimeViewsAsync(cachedPost, viewsKey);
+                    Response.Headers["X-Cache"] = "HIT";
+                    return Ok(cachedPost);
+                }
+            }
+
+            // 4. Đọc dữ liệu từ MongoDB
+            var filter = NotDeleted & Builders<Post>.Filter.Eq(p => p.Id, id);
+            var post = await _mongo.Posts.Find(filter).FirstOrDefaultAsync();
+            if (post == null)
+                return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
+
+            var response = PostResponse.FromModel(post);
+            await OverrideRealtimeViewsAsync(response, viewsKey);
+
+            // 5. Ghi cache với TTL 10 phút
+            await _cacheService.SetAsync(cacheKey, JsonSerializer.Serialize(response), CacheTtl);
+
+            Response.Headers["X-Cache"] = "MISS";
+            return Ok(response);
+        }
+        finally
+        {
+            // 6. Giải phóng lock an toàn
+            await _cacheService.ReleaseLockAsync(lockKey, lockToken);
+        }
+    }
+
+    private async Task OverrideRealtimeViewsAsync(PostResponse post, string viewsKey)
+    {
+        var viewsStr = await _cacheService.GetAsync(viewsKey);
+        if (!string.IsNullOrEmpty(viewsStr) && int.TryParse(viewsStr, out var v))
+        {
+            post.Views = v;
+        }
     }
 
     /// <summary>
@@ -270,12 +328,16 @@ public class PostsController : ControllerBase
     [HttpPost("{id}/view")]
     public async Task<IActionResult> IncrementView(string id)
     {
-        // TODO [SV2]: Implement bộ đếm INCR lượt xem
-        // 1. Gọi _cacheService.IncrementAsync(ViewsKey(id)) → trả về lượt xem mới
-        // 2. (Tuỳ chọn) Đồng bộ ngược về MongoDB mỗi N lần hoặc theo schedule
-        // 3. Trả về 200 OK kèm { views: newCount }
+        if (!ObjectId.TryParse(id, out _))
+            return BadRequest(new { message = "ID bài viết không hợp lệ." });
 
-        throw new NotImplementedException();
+        var viewsKey = ViewsKey(id);
+        var newCount = await _cacheService.IncrementAsync(viewsKey);
+
+        // Đánh dấu dirty để worker định kỳ flush về MongoDB (Write-Behind)
+        await _cacheService.MarkDirtyViewAsync(id);
+
+        return Ok(new { views = newCount });
     }
 
     // ===== Helpers =====
