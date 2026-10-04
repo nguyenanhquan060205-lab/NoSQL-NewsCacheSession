@@ -69,4 +69,55 @@ public class PostsControllerCacheAsideTests
         // Assert
         result.Should().NotBeNull();
     }
+
+    [Fact]
+    public async Task GetAll_WhenCacheHit_ShouldReturnFromCacheWithHitHeader()
+    {
+        // Arrange
+        var pagedResponse = new PagedPostsResponse
+        {
+            Page = 1,
+            PageSize = 10,
+            TotalItems = 1,
+            TotalPages = 1,
+            Items = new List<PostResponse>
+            {
+                new() { Id = "507f1f77bcf86cd799439011", Title = "Post 1" }
+            }
+        };
+
+        _mockCache.Setup(c => c.GetAsync("posts:ver")).ReturnsAsync("1");
+        _mockCache.Setup(c => c.GetAsync("posts:cat:all:p1:v1"))
+            .ReturnsAsync(JsonSerializer.Serialize(pagedResponse));
+
+        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        var httpContext = new DefaultHttpContext();
+        controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
+        // Act
+        var result = await controller.GetAll(page: 1, pageSize: 10) as OkObjectResult;
+
+        // Assert
+        result.Should().NotBeNull();
+        httpContext.Response.Headers["X-Cache"].ToString().Should().Be("HIT");
+
+        var response = result!.Value as PagedPostsResponse;
+        response.Should().NotBeNull();
+        response!.Items.Should().HaveCount(1);
+        response.Items[0].Title.Should().Be("Post 1");
+    }
+
+    [Fact]
+    public async Task GetAll_WithInvalidCategoryId_ShouldReturnBadRequest()
+    {
+        // Arrange
+        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+
+        // Act
+        var result = await controller.GetAll(page: 1, pageSize: 10, categoryId: "invalid-cat") as BadRequestObjectResult;
+
+        // Assert
+        result.Should().NotBeNull();
+    }
 }
