@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { categoriesApi } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { authApi, categoriesApi } from '../services/api';
+import { useAuth } from '../context/useAuth';
+import { getApiMessage } from '../utils/apiError';
 
 function getVietnameseDate() {
   const formattedDate = new Intl.DateTimeFormat('vi-VN', {
@@ -15,11 +16,33 @@ function getVietnameseDate() {
 }
 
 export default function Navbar() {
-  const { user } = useAuth();
+  const { user, clearAuth } = useAuth();
   const { pathname, search } = useLocation();
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
+  const [logoutError, setLogoutError] = useState('');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const logoutInProgress = useRef(false);
   const selectedCategoryId = new URLSearchParams(search).get('categoryId') || '';
   const isHome = pathname === '/';
+
+  const handleLogout = async () => {
+    if (logoutInProgress.current) return;
+    logoutInProgress.current = true;
+    setIsLoggingOut(true);
+    setLogoutError('');
+
+    try {
+      await authApi.logout();
+      clearAuth();
+      navigate('/', { replace: true });
+    } catch (error) {
+      setLogoutError(getApiMessage(error, 'Không thể đăng xuất lúc này. Vui lòng thử lại.'));
+    } finally {
+      logoutInProgress.current = false;
+      setIsLoggingOut(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -56,7 +79,7 @@ export default function Navbar() {
       </div>
 
       <div className="border-b border-zinc-200">
-        <div className="mx-auto grid min-h-20 max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 sm:min-h-24 sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
+        <div className="relative mx-auto grid min-h-20 max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 sm:min-h-24 sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
           <div className="hidden text-xs leading-5 text-zinc-500 md:block">
             <p className="font-bold uppercase tracking-[0.14em] text-red-700">Chuyên trang tin tức</p>
             <p>Nhanh hơn với Redis Cache</p>
@@ -95,18 +118,35 @@ export default function Navbar() {
               </svg>
               Viết bài
             </Link>
-            <Link
-              to="/login"
-              className="inline-flex min-h-11 items-center gap-2 rounded-md border border-zinc-300 px-3 text-sm font-bold text-zinc-800 transition-colors hover:border-red-700 hover:text-red-700"
-            >
-              <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
-              </svg>
-              <span className="hidden sm:inline">Đăng nhập</span>
-              <span className="sm:hidden">Tài khoản</span>
-            </Link>
+            {user ? (
+              <>
+                <span className="hidden max-w-32 truncate text-sm font-semibold text-zinc-600 xl:inline" title={user.username}>
+                  {user.username}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="inline-flex min-h-11 items-center rounded-md border border-zinc-300 px-3 text-sm font-bold text-zinc-800 transition-colors hover:border-red-700 hover:text-red-700 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {isLoggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-zinc-300 px-3 text-sm font-bold text-zinc-800 transition-colors hover:border-red-700 hover:text-red-700"
+              >
+                <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
+                </svg>
+                <span className="hidden sm:inline">Đăng nhập</span>
+                <span className="sm:hidden">Tài khoản</span>
+              </Link>
+            )}
           </div>
+          {logoutError ? <p role="alert" className="absolute right-4 top-full z-20 mt-1 max-w-sm border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800 shadow-sm">{logoutError}</p> : null}
         </div>
       </div>
 

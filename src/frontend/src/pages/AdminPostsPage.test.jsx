@@ -2,11 +2,11 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { categoriesApi, postsApi } from '../services/api';
 import AdminPostsPage from './AdminPostsPage';
 
-vi.mock('../context/AuthContext', () => ({ useAuth: vi.fn() }));
+vi.mock('../context/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('../services/api', () => ({
   postsApi: { getAll: vi.fn(), delete: vi.fn() },
   categoriesApi: { getAll: vi.fn() },
