@@ -74,19 +74,25 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-[70vh] bg-zinc-50 px-4 py-12 sm:px-6 sm:py-16">
-      <div className="mx-auto grid w-full max-w-5xl overflow-hidden border border-zinc-200 bg-white shadow-sm md:grid-cols-[0.9fr_1.1fr]">
-        <aside className="flex flex-col justify-between bg-zinc-950 p-7 text-white sm:p-10">
-          <div>
+    <div className="min-h-[70vh] bg-zinc-100 px-4 py-10 sm:px-6 sm:py-16">
+      <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-2xl shadow-zinc-900/10 md:grid-cols-[0.9fr_1.1fr]">
+        <aside className="relative isolate flex flex-col justify-between overflow-hidden bg-zinc-950 p-7 text-white sm:p-10 lg:p-12">
+          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(185,28,28,0.32),transparent_55%)]" />
+          <div aria-hidden="true" className="absolute -bottom-20 -right-10 size-64 rounded-full border border-white/10" />
+          <div className="relative">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-400">NewsCache · Tài khoản</p>
-            <h1 className="mt-8 font-editorial text-4xl font-black leading-tight tracking-tight sm:text-5xl">
+            <h1 className="font-editorial mt-8 text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
               Tin tức đáng tin, bắt đầu từ đây.
             </h1>
             <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-300">
               Đăng nhập để tiếp tục viết bài và quản lý nội dung trên NewsCache.
             </p>
+            <div className="mt-9 flex flex-wrap gap-2 text-xs font-bold text-zinc-200">
+              <span className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-2">Tin tức mới</span>
+              <span className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-2">Redis Cache</span>
+            </div>
           </div>
-          <Link to="/" className="mt-10 inline-flex min-h-11 items-center self-start text-sm font-semibold text-zinc-300 underline decoration-zinc-600 underline-offset-4 transition hover:text-white">
+          <Link to="/" className="relative mt-10 inline-flex min-h-11 items-center self-start text-sm font-semibold text-zinc-300 underline decoration-zinc-600 underline-offset-4 transition hover:text-white">
             ← Quay về trang chủ
           </Link>
         </aside>
@@ -101,13 +107,13 @@ export default function LoginPage() {
           </p>
 
           {isRegister ? (
-            <p className="mt-5 border-l-2 border-red-700 bg-red-50 px-3 py-2 text-xs leading-5 text-zinc-700">
+            <p className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs leading-5 text-zinc-700">
               Tài khoản đầu tiên trên hệ thống sẽ được cấp quyền quản trị.
             </p>
           ) : null}
 
-          {notice ? <p role="status" className="mt-5 rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{notice}</p> : null}
-          {error ? <p role="alert" className="mt-5 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p> : null}
+          {notice ? <p role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{notice}</p> : null}
+          {error ? <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p> : null}
 
           <form onSubmit={handleSubmit} className="mt-7 space-y-5">
             <div>
@@ -119,7 +125,7 @@ export default function LoginPage() {
                 autoComplete="username"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
-                className="min-h-12 w-full border border-zinc-300 bg-white px-3 text-base text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-red-700 focus:ring-2 focus:ring-red-700/20"
+                className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-red-700 focus:ring-4 focus:ring-red-100"
                 required
                 disabled={isSubmitting}
               />
@@ -133,7 +139,7 @@ export default function LoginPage() {
                 autoComplete={isRegister ? 'new-password' : 'current-password'}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="min-h-12 w-full border border-zinc-300 bg-white px-3 text-base text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-red-700 focus:ring-2 focus:ring-red-700/20"
+                className="min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-base text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-red-700 focus:ring-4 focus:ring-red-100"
                 required
                 minLength={isRegister ? 6 : undefined}
                 disabled={isSubmitting}
@@ -144,7 +150,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex min-h-12 w-full items-center justify-center bg-red-700 px-4 text-sm font-bold text-white transition hover:bg-red-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:cursor-wait disabled:opacity-60"
+              className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-red-700 px-4 text-sm font-bold text-white shadow-lg shadow-red-900/10 transition hover:bg-red-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:cursor-wait disabled:opacity-60"
             >
               {isSubmitting ? 'Đang xử lý…' : isRegister ? 'Tạo tài khoản' : 'Đăng nhập'}
             </button>
@@ -164,6 +170,6 @@ export default function LoginPage() {
           </p>
         </section>
       </div>
-    </main>
+    </div>
   );
 }

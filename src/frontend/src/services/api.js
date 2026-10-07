@@ -24,6 +24,12 @@ export const authApi = {
   // TODO [SV3]: Gọi GET /api/auth/me
   getMe: () =>
     api.get('/auth/me'),
+
+  getActiveSessions: () =>
+    api.get('/auth/sessions'),
+
+  revokeSession: (sessionId) =>
+    api.delete(`/auth/sessions/${encodeURIComponent(sessionId)}`),
 };
 
 // ========== POSTS API ==========

@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import PostDetailPage from './pages/PostDetailPage';
 import CreateEditPostPage from './pages/CreateEditPostPage';
 import AdminPostsPage from './pages/AdminPostsPage';
+import AdminSessionsPage from './pages/AdminSessionsPage';
 import Footer from './components/Footer';
 import RequireAdmin from './components/RequireAdmin';
 import { AuthProvider } from './context/AuthContext';
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/posts/:id/edit" element={<CreateEditPostPage />} />
             <Route element={<RequireAdmin />}>
               <Route path="/admin/posts" element={<AdminPostsPage />} />
+              <Route path="/admin/sessions" element={<AdminSessionsPage />} />
             </Route>
           </Routes>
         </main>

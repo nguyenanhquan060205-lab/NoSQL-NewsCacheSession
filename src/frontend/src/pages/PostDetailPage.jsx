@@ -32,7 +32,7 @@ function formatPostDate(value) {
 
 function LoadingState() {
   return (
-    <div aria-label="Đang tải bài viết" aria-live="polite" className="mx-auto max-w-5xl animate-pulse px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+    <div role="status" aria-label="Đang tải bài viết" aria-live="polite" className="mx-auto max-w-5xl motion-safe:animate-pulse motion-reduce:animate-none px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
       <div className="mx-auto max-w-3xl">
         <div className="h-3 w-24 rounded bg-red-100" />
         <div className="mt-5 h-12 w-full rounded bg-zinc-200" />
@@ -139,19 +139,24 @@ export default function PostDetailPage() {
 
   return (
     <article className="pb-16 sm:pb-24">
-      <header className="border-b border-zinc-200 bg-zinc-50">
-        <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
-          <Link to="/" className="inline-flex min-h-11 items-center text-sm font-bold text-zinc-600 transition-colors hover:text-red-700">
+      <header className="relative isolate overflow-hidden border-b border-zinc-800 bg-zinc-950 text-white">
+        <div aria-hidden="true" className="absolute inset-y-0 right-0 hidden w-1/2 bg-[radial-gradient(ellipse_at_top_right,rgba(185,28,28,0.2),transparent_65%)] md:block" />
+        <div className="relative mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+          <Link to="/" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 text-sm font-bold text-zinc-300 transition-colors hover:border-white/30 hover:text-white">
+            <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12" /></svg>
             Trở về trang tin
           </Link>
-          <p className="mt-5 text-xs font-black uppercase tracking-[0.16em] text-red-700">Bài viết</p>
-          <h1 className="font-editorial mt-3 break-words text-4xl font-black leading-[1.12] text-zinc-950 sm:text-5xl lg:text-6xl">
+          <p className="mt-7 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-red-400"><span className="size-1.5 rounded-full bg-red-500" aria-hidden="true" />Bài viết</p>
+          <h1 className="font-editorial mt-3 break-words text-4xl font-black leading-[1.08] text-white sm:text-5xl lg:text-6xl">
             {post.title}
           </h1>
-          <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-semibold text-zinc-500">
+          <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-semibold text-zinc-300">
             <time dateTime={post.createdAt}>Đăng ngày {formatPostDate(post.createdAt)}</time>
-            <span aria-hidden="true" className="size-1 rounded-full bg-red-600" />
-            <span aria-live="polite">{Number(post.views || 0).toLocaleString('vi-VN')} lượt xem</span>
+            <span aria-hidden="true" className="size-1 rounded-full bg-red-500" />
+            <span aria-live="polite" className="inline-flex items-center gap-1.5">
+              <svg viewBox="0 0 24 24" className="size-4 text-red-400" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.5" /></svg>
+              {Number(post.views || 0).toLocaleString('vi-VN')} lượt xem
+            </span>
           </div>
           {viewError ? (
             <p role="status" className="mt-3 text-sm text-amber-800">
@@ -163,7 +168,7 @@ export default function PostDetailPage() {
 
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         {post.imageUrl ? (
-          <div className="mt-8 overflow-hidden rounded-2xl bg-zinc-100 sm:mt-10">
+          <div className="mt-8 overflow-hidden rounded-2xl bg-zinc-100 shadow-xl shadow-zinc-950/10 sm:mt-10">
             <img
               src={post.imageUrl}
               alt={`Ảnh minh họa cho bài viết ${post.title}`}
@@ -174,7 +179,7 @@ export default function PostDetailPage() {
         ) : null}
 
         <div className="mx-auto mt-9 max-w-3xl sm:mt-12">
-          <div className="break-words whitespace-pre-line text-[1.0625rem] leading-8 text-zinc-700 sm:text-lg sm:leading-9">
+          <div className="break-words whitespace-pre-line border-l-2 border-zinc-200 pl-5 text-[1.0625rem] leading-8 text-zinc-700 sm:pl-7 sm:text-lg sm:leading-9">
             {post.content}
           </div>
           <div className="mt-12 border-t border-zinc-200 pt-6">
