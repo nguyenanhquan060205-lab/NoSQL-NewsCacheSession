@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { categoriesApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 function getVietnameseDate() {
   const formattedDate = new Intl.DateTimeFormat('vi-VN', {
@@ -14,6 +15,7 @@ function getVietnameseDate() {
 }
 
 export default function Navbar() {
+  const { user } = useAuth();
   const { pathname, search } = useLocation();
   const [categories, setCategories] = useState([]);
   const selectedCategoryId = new URLSearchParams(search).get('categoryId') || '';
@@ -67,6 +69,22 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center justify-end gap-1 sm:gap-2">
+            {user?.role === 'admin' ? (
+              <Link
+                to="/admin/posts"
+                aria-label="Quản trị bài viết"
+                className="inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-bold text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-red-700"
+              >
+                <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <path d="M4 5h16M4 12h16M4 19h16" />
+                  <circle cx="8" cy="5" r="1.5" fill="currentColor" stroke="none" />
+                  <circle cx="16" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                  <circle cx="10" cy="19" r="1.5" fill="currentColor" stroke="none" />
+                </svg>
+                <span className="hidden lg:inline">Quản trị bài viết</span>
+                <span className="lg:hidden">Quản trị</span>
+              </Link>
+            ) : null}
             <Link
               to="/posts/new"
               className="hidden min-h-11 items-center gap-2 rounded-md px-3 text-sm font-bold text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-red-700 sm:inline-flex"
