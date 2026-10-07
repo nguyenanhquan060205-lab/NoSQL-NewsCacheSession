@@ -61,62 +61,76 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="bg-white">
-      <div className="border-b border-zinc-200 bg-zinc-50">
-        <div className="mx-auto flex min-h-9 max-w-7xl items-center justify-between gap-4 px-4 text-xs text-zinc-600 sm:px-6 lg:px-8">
+    <header className="relative z-30 bg-white">
+      <div className="border-b border-zinc-800 bg-zinc-950">
+        <div className="mx-auto flex min-h-9 max-w-7xl items-center justify-between gap-4 px-4 text-xs text-zinc-300 sm:px-6 lg:px-8">
           <p className="whitespace-nowrap">{getVietnameseDate()}</p>
           <div className="flex items-center gap-4">
-            <a href="/#tin-moi" className="hidden min-h-9 items-center font-semibold transition-colors hover:text-red-700 sm:inline-flex">
+            <a href="/#tin-moi" className="hidden min-h-9 items-center font-semibold transition-colors hover:text-white sm:inline-flex">
               Tin mới nhất
             </a>
             <span className="hidden h-3 w-px bg-zinc-300 sm:block" aria-hidden="true" />
             <span className="inline-flex min-h-9 items-center gap-1.5 font-semibold">
-              <span className="inline-flex size-2 rounded-full bg-red-700" aria-hidden="true" />
+              <span className="inline-flex size-2 rounded-full bg-red-500" aria-hidden="true" />
               Redis Cache-Aside
             </span>
           </div>
         </div>
       </div>
 
-      <div className="border-b border-zinc-200">
-        <div className="relative mx-auto grid min-h-20 max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 sm:min-h-24 sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
+      <div className="border-b border-zinc-200 bg-white">
+        <div className="relative mx-auto grid min-h-[4.75rem] max-w-7xl grid-cols-1 items-center gap-1 px-4 py-2 sm:min-h-24 sm:grid-cols-[1fr_auto_1fr] sm:gap-3 sm:py-0 sm:px-6 lg:px-8">
           <div className="hidden text-xs leading-5 text-zinc-500 md:block">
             <p className="font-bold uppercase tracking-[0.14em] text-red-700">Chuyên trang tin tức</p>
             <p>Nhanh hơn với Redis Cache</p>
           </div>
 
-          <Link to="/" className="group inline-flex min-h-12 items-center" aria-label="NewsCache - Trang chủ">
-            <span className="font-editorial text-[1.85rem] font-black leading-none tracking-[-0.06em] text-zinc-950 sm:text-[2.5rem]">
+          <Link to="/" className="group inline-flex min-h-10 items-center justify-center sm:col-start-2 sm:min-h-12" aria-label="NewsCache - Trang chủ">
+            <span className="font-editorial text-[1.35rem] font-black leading-none tracking-[-0.07em] text-zinc-950 sm:text-[2.65rem]">
               NEWS<span className="text-red-700">CACHE</span>
             </span>
           </Link>
 
-          <div className="flex items-center justify-end gap-1 sm:gap-2">
+          <div className="flex min-w-0 items-center justify-center gap-1 sm:justify-end sm:gap-2 sm:col-start-3">
             {user?.role === 'admin' ? (
-              <Link
-                to="/admin/posts"
-                aria-label="Quản trị bài viết"
-                className="inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-bold text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-red-700"
-              >
-                <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                  <path d="M4 5h16M4 12h16M4 19h16" />
-                  <circle cx="8" cy="5" r="1.5" fill="currentColor" stroke="none" />
-                  <circle cx="16" cy="12" r="1.5" fill="currentColor" stroke="none" />
-                  <circle cx="10" cy="19" r="1.5" fill="currentColor" stroke="none" />
-                </svg>
-                <span className="hidden lg:inline">Quản trị bài viết</span>
-                <span className="lg:hidden">Quản trị</span>
-              </Link>
+              <>
+                <Link
+                  to="/admin/posts"
+                  aria-label="Quản trị bài viết"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2.5 text-sm font-bold text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-red-700 sm:px-3"
+                >
+                  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                    <path d="M4 5h16M4 12h16M4 19h16" />
+                    <circle cx="8" cy="5" r="1.5" fill="currentColor" stroke="none" />
+                    <circle cx="16" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                    <circle cx="10" cy="19" r="1.5" fill="currentColor" stroke="none" />
+                  </svg>
+                  <span className="hidden lg:inline">Quản trị bài viết</span>
+                  <span className="hidden sm:inline lg:hidden">Quản trị</span>
+                </Link>
+                <Link
+                  to="/admin/sessions"
+                  aria-label="Quản lý phiên"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2.5 text-sm font-bold text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-red-700 sm:px-3"
+                >
+                  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+                  <span className="hidden xl:inline">Quản lý phiên</span>
+                </Link>
+              </>
             ) : null}
             <Link
               to="/posts/new"
-              className="hidden min-h-11 items-center gap-2 rounded-md px-3 text-sm font-bold text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-red-700 sm:inline-flex"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-red-700 px-2.5 text-sm font-bold text-white transition-colors hover:bg-red-800 sm:px-3"
             >
               <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
               </svg>
-              Viết bài
+              <span className="hidden sm:inline">Viết bài</span>
+              <span className="sr-only sm:hidden">Viết bài</span>
             </Link>
             {user ? (
               <>
@@ -127,15 +141,17 @@ export default function Navbar() {
                   type="button"
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="inline-flex min-h-11 items-center rounded-md border border-zinc-300 px-3 text-sm font-bold text-zinc-800 transition-colors hover:border-red-700 hover:text-red-700 disabled:cursor-wait disabled:opacity-60"
+                  aria-label={isLoggingOut ? 'Đang đăng xuất' : 'Đăng xuất'}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-zinc-300 px-2.5 text-sm font-bold text-zinc-800 transition-colors hover:border-red-700 hover:text-red-700 disabled:cursor-wait disabled:opacity-60 sm:px-3"
                 >
-                  {isLoggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}
+                  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3" /><path d="M12 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5" /></svg>
+                  <span className="hidden sm:inline">{isLoggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}</span>
                 </button>
               </>
             ) : (
               <Link
                 to="/login"
-                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-zinc-300 px-3 text-sm font-bold text-zinc-800 transition-colors hover:border-red-700 hover:text-red-700"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-zinc-300 px-2.5 text-sm font-bold text-zinc-800 transition-colors hover:border-red-700 hover:text-red-700 sm:px-3"
               >
                 <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                   <circle cx="12" cy="8" r="4" />
@@ -150,7 +166,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      <nav aria-label="Chuyên mục" className="border-b border-zinc-300 border-t-2 border-t-red-700 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+      <nav aria-label="Chuyên mục" className="border-b border-zinc-300 border-t-2 border-t-red-700 bg-white shadow-[0_3px_12px_rgba(0,0,0,0.045)]">
         <div className="news-nav-scrollbar mx-auto flex max-w-7xl overflow-x-auto px-2 sm:px-4 lg:px-6">
           <Link
             to={{ pathname: '/', hash: '#tin-moi' }}

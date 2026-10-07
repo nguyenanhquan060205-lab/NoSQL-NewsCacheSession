@@ -23,11 +23,13 @@ describe('Navbar', () => {
     useAuth.mockReturnValue({ status: 'authenticated', user: { role: 'admin' } });
     const { unmount } = render(<MemoryRouter><Navbar /></MemoryRouter>);
     expect(screen.getByRole('link', { name: 'Quản trị bài viết' })).toHaveAttribute('href', '/admin/posts');
+    expect(screen.getByRole('link', { name: 'Quản lý phiên' })).toHaveAttribute('href', '/admin/sessions');
     unmount();
 
     useAuth.mockReturnValue({ status: 'authenticated', user: { role: 'user' } });
     render(<MemoryRouter><Navbar /></MemoryRouter>);
     expect(screen.queryByRole('link', { name: 'Quản trị bài viết' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Quản lý phiên' })).not.toBeInTheDocument();
   });
 
   it('đăng xuất qua API, xóa auth state và điều hướng về trang chủ', async () => {

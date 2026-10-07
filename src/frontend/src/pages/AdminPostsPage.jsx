@@ -163,15 +163,16 @@ export default function AdminPostsPage() {
   };
 
   return (
-    <div className="bg-zinc-50/70 pb-16">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-8 sm:px-6 md:flex-row md:items-end md:justify-between lg:px-8">
+    <div className="bg-zinc-100/80 pb-16">
+      <header className="relative isolate overflow-hidden border-b border-zinc-800 bg-zinc-950 text-white">
+        <div aria-hidden="true" className="absolute inset-y-0 right-0 hidden w-1/2 bg-[radial-gradient(ellipse_at_top_right,rgba(185,28,28,0.22),transparent_65%)] md:block" />
+        <div className="relative mx-auto flex max-w-7xl flex-col gap-5 px-4 py-9 sm:px-6 sm:py-12 md:flex-row md:items-end md:justify-between lg:px-8">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-red-700">Bảng điều khiển nội dung</p>
-            <h1 className="font-editorial mt-2 text-4xl font-black tracking-tight text-zinc-950 sm:text-5xl">Quản trị bài viết</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">Theo dõi, chỉnh sửa và xuất bản nội dung từ một danh sách phân trang an toàn.</p>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-red-400">Bảng điều khiển nội dung</p>
+            <h1 className="font-editorial mt-2 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">Quản trị bài viết</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-300">Theo dõi, chỉnh sửa và xuất bản nội dung từ một danh sách phân trang an toàn.</p>
           </div>
-          <Link to="/posts/new" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-red-700 px-5 text-sm font-black text-white transition-colors hover:bg-red-800">
+          <Link to="/posts/new" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-red-700 px-5 text-sm font-black text-white shadow-lg shadow-black/20 transition-colors hover:bg-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
             <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
             Tạo bài viết
           </Link>
@@ -179,9 +180,12 @@ export default function AdminPostsPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b-2 border-zinc-950 pb-3">
-          <h2 className="font-editorial text-2xl font-bold text-zinc-950">Danh sách nội dung</h2>
-          <p className="text-xs font-black uppercase tracking-wider text-zinc-500">{totalItems.toLocaleString('vi-VN')} bài · Trang {page}/{Math.max(totalPages, 1)}</p>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-300 pb-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-red-700">Kho nội dung</p>
+            <h2 className="font-editorial mt-1 text-2xl font-bold text-zinc-950 sm:text-3xl">Danh sách bài viết</h2>
+          </div>
+          <p className="rounded-full border border-zinc-200 bg-white px-3.5 py-2 text-xs font-black uppercase tracking-wider text-zinc-600 shadow-sm">{totalItems.toLocaleString('vi-VN')} bài · Trang {page}/{Math.max(totalPages, 1)}</p>
         </div>
 
         {categoryError ? (
@@ -211,7 +215,7 @@ export default function AdminPostsPage() {
         ) : null}
 
         {!loading && !error && posts.length > 0 ? (
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <table className="w-full border-collapse">
               <caption className="sr-only">Danh sách bài viết dành cho quản trị viên</caption>
               <thead className="hidden bg-zinc-950 text-left text-xs uppercase tracking-wider text-white md:table-header-group">
@@ -221,7 +225,7 @@ export default function AdminPostsPage() {
                 {posts.map((post) => {
                   const deleting = deletingIds.has(post.id);
                   return (
-                    <tr key={post.id} className="block p-4 md:table-row md:p-0">
+                    <tr key={post.id} className="block p-4 transition-colors hover:bg-zinc-50/80 md:table-row md:p-0">
                       <td className="block md:table-cell md:px-4 md:py-4">
                         <Link to={`/posts/${post.id}`} className="font-editorial text-lg font-bold text-zinc-950 transition-colors hover:text-red-700">{post.title}</Link>
                         <p className="mt-1 text-xs font-semibold text-zinc-500">Cập nhật {formatDate(post.updatedAt)}</p>

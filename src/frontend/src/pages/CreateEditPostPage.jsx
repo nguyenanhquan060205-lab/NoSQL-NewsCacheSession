@@ -220,17 +220,18 @@ export default function CreateEditPostPage() {
   const hasUnknownCurrentCategory = form.categoryId && !categories.some((category) => category.id === form.categoryId);
 
   return (
-    <div className="bg-zinc-50/70 pb-16">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-          <Link to="/admin/posts" className="inline-flex min-h-11 items-center text-sm font-bold text-zinc-600 transition-colors hover:text-red-700">← Về trang quản trị</Link>
-          <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-red-700">{isEdit ? 'Chỉnh sửa nội dung' : 'Xuất bản nội dung'}</p>
-          <h1 className="font-editorial mt-2 text-4xl font-black tracking-tight text-zinc-950 sm:text-5xl">{isEdit ? 'Sửa bài viết' : 'Tạo bài viết mới'}</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-600">Điền nội dung rõ ràng, chọn chuyên mục phù hợp và kiểm tra lại trước khi lưu.</p>
+    <div className="bg-zinc-100/80 pb-16">
+      <header className="relative isolate overflow-hidden border-b border-zinc-800 bg-zinc-950 text-white">
+        <div aria-hidden="true" className="absolute inset-y-0 right-0 hidden w-1/2 bg-[radial-gradient(ellipse_at_top_right,rgba(185,28,28,0.22),transparent_65%)] md:block" />
+        <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+          <Link to="/admin/posts" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/15 px-4 text-sm font-bold text-zinc-300 transition-colors hover:border-white/30 hover:text-white"><span aria-hidden="true">←</span> Về trang quản trị</Link>
+          <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-red-400">{isEdit ? 'Chỉnh sửa nội dung' : 'Xuất bản nội dung'}</p>
+          <h1 className="font-editorial mt-2 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">{isEdit ? 'Sửa bài viết' : 'Tạo bài viết mới'}</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-300">Điền nội dung rõ ràng, chọn chuyên mục phù hợp và kiểm tra lại trước khi lưu.</p>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-7 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 py-7 sm:px-6 lg:px-8">
         {draftRestored ? (
           <div role="status" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
             <p><strong>Đã khôi phục bản nháp.</strong> Dữ liệu được giữ lại từ lần phiên đăng nhập gián đoạn.</p>
@@ -246,30 +247,30 @@ export default function CreateEditPostPage() {
         ) : null}
 
         <form onSubmit={handleSubmit} noValidate className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <section className="space-y-5 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7" aria-labelledby="post-content-heading">
+          <section className="space-y-5 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7" aria-labelledby="post-content-heading">
             <h2 id="post-content-heading" className="font-editorial text-2xl font-bold text-zinc-950">Nội dung bài viết</h2>
 
             {submitError ? <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{submitError}</p> : null}
 
             <div>
               <div className="flex items-center gap-1"><label htmlFor="post-title" className="text-sm font-black text-zinc-900">Tiêu đề</label><span className="text-red-700" aria-hidden="true">*</span></div>
-              <input id="post-title" type="text" value={form.title} onChange={updateField('title')} aria-invalid={Boolean(fieldErrors.title)} aria-describedby={fieldErrors.title ? 'post-title-error' : undefined} className="mt-2 min-h-12 w-full rounded-lg border border-zinc-300 px-4 text-base text-zinc-950 outline-none transition focus:border-red-700 focus:ring-4 focus:ring-red-100" placeholder="Nhập tiêu đề bài viết" />
+              <input id="post-title" type="text" value={form.title} onChange={updateField('title')} aria-invalid={Boolean(fieldErrors.title)} aria-describedby={fieldErrors.title ? 'post-title-error' : undefined} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 px-4 text-base text-zinc-950 outline-none transition focus:border-red-700 focus:ring-4 focus:ring-red-100" placeholder="Nhập tiêu đề bài viết" />
               {fieldErrors.title ? <p id="post-title-error" className="mt-2 text-sm font-semibold text-red-700">{fieldErrors.title}</p> : null}
             </div>
 
             <div>
               <div className="flex items-center gap-1"><label htmlFor="post-content" className="text-sm font-black text-zinc-900">Nội dung</label><span className="text-red-700" aria-hidden="true">*</span></div>
-              <textarea id="post-content" value={form.content} onChange={updateField('content')} aria-invalid={Boolean(fieldErrors.content)} aria-describedby={fieldErrors.content ? 'post-content-error' : undefined} className="mt-2 min-h-80 w-full resize-y rounded-lg border border-zinc-300 px-4 py-3 text-base leading-7 text-zinc-950 outline-none transition focus:border-red-700 focus:ring-4 focus:ring-red-100" placeholder="Nhập nội dung bài viết..." />
+              <textarea id="post-content" value={form.content} onChange={updateField('content')} aria-invalid={Boolean(fieldErrors.content)} aria-describedby={fieldErrors.content ? 'post-content-error' : undefined} className="mt-2 min-h-80 w-full resize-y rounded-xl border border-zinc-300 px-4 py-3 text-base leading-7 text-zinc-950 outline-none transition focus:border-red-700 focus:ring-4 focus:ring-red-100" placeholder="Nhập nội dung bài viết..." />
               {fieldErrors.content ? <p id="post-content-error" className="mt-2 text-sm font-semibold text-red-700">{fieldErrors.content}</p> : null}
             </div>
           </section>
 
           <aside className="space-y-5">
-            <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
               <h2 className="font-editorial text-xl font-bold text-zinc-950">Thiết lập xuất bản</h2>
               <div className="mt-5">
                 <label htmlFor="post-category" className="text-sm font-black text-zinc-900">Chuyên mục</label>
-                <select id="post-category" value={form.categoryId} onChange={updateField('categoryId')} className="mt-2 min-h-12 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-red-700 focus:ring-4 focus:ring-red-100">
+                <select id="post-category" value={form.categoryId} onChange={updateField('categoryId')} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-3 text-base text-zinc-950 outline-none focus:border-red-700 focus:ring-4 focus:ring-red-100">
                   <option value="">Không chọn chuyên mục</option>
                   {hasUnknownCurrentCategory ? <option value={form.categoryId}>Chuyên mục hiện tại</option> : null}
                   {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
@@ -278,18 +279,18 @@ export default function CreateEditPostPage() {
 
               <div className="mt-5">
                 <label htmlFor="post-image" className="text-sm font-black text-zinc-900">URL hình ảnh</label>
-                <input id="post-image" type="url" value={form.imageUrl} onChange={updateField('imageUrl')} aria-invalid={Boolean(fieldErrors.imageUrl)} aria-describedby={fieldErrors.imageUrl ? 'post-image-error' : 'post-image-help'} className="mt-2 min-h-12 w-full rounded-lg border border-zinc-300 px-3 text-sm text-zinc-950 outline-none focus:border-red-700 focus:ring-4 focus:ring-red-100" placeholder="https://..." />
+                <input id="post-image" type="url" value={form.imageUrl} onChange={updateField('imageUrl')} aria-invalid={Boolean(fieldErrors.imageUrl)} aria-describedby={fieldErrors.imageUrl ? 'post-image-error' : 'post-image-help'} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 px-3 text-base text-zinc-950 outline-none focus:border-red-700 focus:ring-4 focus:ring-red-100" placeholder="https://..." />
                 {fieldErrors.imageUrl ? <p id="post-image-error" className="mt-2 text-sm font-semibold text-red-700">{fieldErrors.imageUrl}</p> : null}
                 <p id="post-image-help" className="mt-2 text-xs leading-5 text-zinc-500">SCRUM-29 sử dụng URL ngoài; tải tệp ảnh thuộc SCRUM-39.</p>
               </div>
             </section>
 
-            <button type="submit" disabled={submitting} className="min-h-12 w-full cursor-pointer rounded-lg bg-red-700 px-5 text-sm font-black text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="submit" disabled={submitting} className="min-h-12 w-full cursor-pointer rounded-xl bg-red-700 px-5 text-sm font-black text-white shadow-lg shadow-red-900/10 transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60">
               {submitting ? 'Đang lưu...' : (isEdit ? 'Cập nhật bài viết' : 'Đăng bài')}
             </button>
           </aside>
         </form>
-      </main>
+      </div>
     </div>
   );
 }

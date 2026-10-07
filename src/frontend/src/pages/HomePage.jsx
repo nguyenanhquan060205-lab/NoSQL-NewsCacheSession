@@ -8,7 +8,7 @@ const PAGE_SIZE = 12;
 
 function LoadingState() {
   return (
-    <div aria-label="Đang tải bài viết" aria-live="polite" className="animate-pulse">
+    <div role="status" aria-label="Đang tải bài viết" aria-live="polite" className="motion-safe:animate-pulse motion-reduce:animate-none">
       <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,0.9fr)]">
         <div>
           <div className="aspect-[16/9] rounded-2xl bg-zinc-200" />
@@ -117,7 +117,7 @@ export default function HomePage() {
   return (
     <>
       <div id="tin-moi" className="scroll-mt-32">
-        <div className="mx-auto max-w-7xl px-4 pb-16 pt-7 sm:px-6 sm:pt-10 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:pt-9 lg:px-8">
           {isPreview ? (
             <div role="status" className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
               <svg viewBox="0 0 24 24" className="mt-0.5 size-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -127,21 +127,30 @@ export default function HomePage() {
             </div>
           ) : null}
 
-          <div className="mb-7 flex flex-col gap-3 border-b-2 border-zinc-950 pb-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-red-700">Dòng tin hôm nay</p>
-              <h1 className="font-editorial mt-1 text-4xl font-bold tracking-tight text-zinc-950 sm:text-5xl">Tin tức mới nhất</h1>
+          <div className="relative mb-8 grid gap-5 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7 md:grid-cols-[minmax(0,1fr)_minmax(16rem,0.7fr)] md:items-end">
+            <span aria-hidden="true" className="absolute inset-y-5 left-0 w-1 rounded-r-full bg-red-700" />
+            <div className="pl-2">
+              <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-red-700">
+                <span className="size-1.5 rounded-full bg-red-700" aria-hidden="true" />Dòng tin hôm nay
+              </p>
+              <h1 className="font-editorial mt-2 text-4xl font-bold tracking-tight text-zinc-950 sm:text-5xl lg:text-6xl">Tin tức mới nhất</h1>
             </div>
-            <p className="max-w-md text-sm leading-6 text-zinc-600">
-              Những câu chuyện đáng chú ý, được sắp xếp để bạn nắm bắt thông tin nhanh và rõ ràng.
-            </p>
+            <div className="flex flex-col gap-3 border-t border-zinc-200 pt-4 md:items-end md:border-l md:border-t-0 md:pl-6 md:pt-0 md:text-right">
+              <p className="max-w-md text-sm leading-6 text-zinc-600">
+                Những câu chuyện đáng chú ý, được sắp xếp để bạn nắm bắt thông tin nhanh và rõ ràng.
+              </p>
+              {!loading && !error ? <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">{totalItems.toLocaleString('vi-VN')} bài trong dòng tin</p> : null}
+            </div>
           </div>
 
           {loading ? <LoadingState /> : null}
 
           {!loading && error ? (
-            <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-6 py-10 text-center">
-              <h2 className="font-editorial text-2xl font-bold text-red-950">Chưa tải được danh sách tin</h2>
+            <div role="alert" className="rounded-2xl border border-red-200 bg-white px-6 py-10 text-center shadow-sm">
+              <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-red-50 text-red-700" aria-hidden="true">
+                <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3 22 20H2L12 3Z" /><path d="M12 9v5m0 3h.01" /></svg>
+              </span>
+              <h2 className="font-editorial mt-4 text-2xl font-bold text-red-950">Chưa tải được danh sách tin</h2>
               <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-red-800">{error}</p>
               <button type="button" onClick={retryLoading} className="mt-5 min-h-11 cursor-pointer rounded-lg bg-red-700 px-5 text-sm font-black text-white transition-colors hover:bg-red-800">
                 Thử tải lại
@@ -150,7 +159,7 @@ export default function HomePage() {
           ) : null}
 
           {!loading && !error && posts.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-16 text-center">
+            <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-16 text-center shadow-sm">
               <h2 className="font-editorial text-2xl font-bold text-zinc-950">
                 {categoryId ? 'Chuyên mục chưa có bài viết' : 'Chưa có bài viết nào'}
               </h2>
