@@ -2,10 +2,10 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import RequireAdmin from './RequireAdmin';
 
-vi.mock('../context/AuthContext', () => ({ useAuth: vi.fn() }));
+vi.mock('../context/useAuth', () => ({ useAuth: vi.fn() }));
 
 function LoginProbe() {
   const location = useLocation();

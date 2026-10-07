@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { categoriesApi, postsApi } from '../services/api';
 import { getApiMessage, getApiStatus } from '../utils/apiError';
 
@@ -36,7 +36,7 @@ export default function AdminPostsPage() {
   const [posts, setPosts] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loadedRequestKey, setLoadedRequestKey] = useState(null);
   const [error, setError] = useState('');
   const [categories, setCategories] = useState([]);
   const [categoryError, setCategoryError] = useState('');
@@ -48,6 +48,8 @@ export default function AdminPostsPage() {
   const deleteInFlightRef = useRef(new Set());
   const rawPage = searchParams.get('page');
   const page = parseAdminPage(rawPage);
+  const requestKey = `${page}:${reloadVersion}`;
+  const loading = loadedRequestKey !== requestKey;
 
   const replacePage = useCallback((nextPage) => {
     const next = new URLSearchParams(searchParams);
@@ -63,8 +65,6 @@ export default function AdminPostsPage() {
   useEffect(() => {
     const generation = ++requestGenerationRef.current;
     let active = true;
-    setLoading(true);
-    setError('');
 
     postsApi.getAll(page, PAGE_SIZE)
       .then((response) => {
@@ -78,6 +78,7 @@ export default function AdminPostsPage() {
           return;
         }
 
+        setError('');
         setPosts(Array.isArray(payload.items) ? payload.items : []);
         setTotalItems(Number(payload.totalItems) || 0);
         setTotalPages(nextTotalPages);
@@ -90,19 +91,20 @@ export default function AdminPostsPage() {
         setError(getApiMessage(requestError, 'Không thể tải danh sách bài viết. Vui lòng thử lại.'));
       })
       .finally(() => {
-        if (active && generation === requestGenerationRef.current) setLoading(false);
+        if (active && generation === requestGenerationRef.current) setLoadedRequestKey(requestKey);
       });
 
     return () => { active = false; };
-  }, [page, reloadVersion, replacePage]);
+  }, [page, reloadVersion, replacePage, requestKey]);
 
   useEffect(() => {
     let active = true;
-    setCategoryError('');
 
     categoriesApi.getAll()
       .then((response) => {
-        if (active) setCategories(Array.isArray(response.data) ? response.data : []);
+        if (!active) return;
+        setCategories(Array.isArray(response.data) ? response.data : []);
+        setCategoryError('');
       })
       .catch((requestError) => {
         if (!active) return;

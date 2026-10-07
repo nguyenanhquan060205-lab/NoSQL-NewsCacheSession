@@ -3,7 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authApi } from '../services/api';
-import { AuthProvider, useAuth } from './AuthContext';
+import { AuthProvider } from './AuthContext';
+import { useAuth } from './useAuth';
 
 vi.mock('../services/api', () => ({
   authApi: { getMe: vi.fn() },
@@ -18,6 +19,7 @@ function AuthProbe() {
       <span data-testid="username">{user?.username || ''}</span>
       <span data-testid="error">{error || ''}</span>
       <button type="button" onClick={refresh}>Thử lại</button>
+      <button type="button" onClick={() => refresh({ force: true })}>Làm mới phiên mới</button>
       <button type="button" onClick={clearAuth}>Xóa auth</button>
     </div>
   );
@@ -87,6 +89,23 @@ describe('AuthProvider', () => {
     await waitFor(() => expect(screen.getByTestId('username')).toHaveTextContent('admin-moi'));
 
     resolveOldRequest({ data: { username: 'admin-cu', role: 'admin' } });
+    await waitFor(() => expect(screen.getByTestId('username')).toHaveTextContent('admin-moi'));
+  });
+
+  it('force refresh bỏ qua request getMe cũ sau khi vừa đăng nhập', async () => {
+    const user = userEvent.setup();
+    let resolveOldRequest;
+    authApi.getMe
+      .mockReturnValueOnce(new Promise((resolve) => { resolveOldRequest = resolve; }))
+      .mockResolvedValueOnce({ data: { username: 'admin-moi', role: 'admin' } });
+
+    render(<AuthProvider><AuthProbe /></AuthProvider>);
+
+    await user.click(screen.getByRole('button', { name: 'Làm mới phiên mới' }));
+    await waitFor(() => expect(authApi.getMe).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByTestId('username')).toHaveTextContent('admin-moi'));
+
+    resolveOldRequest({ data: { username: 'anonymous', role: 'user' } });
     await waitFor(() => expect(screen.getByTestId('username')).toHaveTextContent('admin-moi'));
   });
 });

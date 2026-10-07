@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { categoriesApi, postsApi } from '../services/api';
 import { getApiMessage, getApiStatus, getValidationErrors } from '../utils/apiError';
 
@@ -69,7 +69,7 @@ export default function CreateEditPostPage() {
   const [categories, setCategories] = useState([]);
   const [categoryError, setCategoryError] = useState('');
   const [categoryVersion, setCategoryVersion] = useState(0);
-  const [loadingPost, setLoadingPost] = useState(isEdit);
+  const [loadedPostRequestKey, setLoadedPostRequestKey] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [postVersion, setPostVersion] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -79,14 +79,17 @@ export default function CreateEditPostPage() {
   const submitLockRef = useRef(false);
   const postGenerationRef = useRef(0);
   const loadedPostRef = useRef(null);
+  const postRequestKey = `${id || 'new'}:${postVersion}`;
+  const loadingPost = isEdit && loadedPostRequestKey !== postRequestKey;
 
   useEffect(() => {
     let active = true;
-    setCategoryError('');
 
     categoriesApi.getAll()
       .then((response) => {
-        if (active) setCategories(Array.isArray(response.data) ? response.data : []);
+        if (!active) return;
+        setCategories(Array.isArray(response.data) ? response.data : []);
+        setCategoryError('');
       })
       .catch((requestError) => {
         if (!active) return;
@@ -102,8 +105,6 @@ export default function CreateEditPostPage() {
 
     const generation = ++postGenerationRef.current;
     let active = true;
-    setLoadingPost(true);
-    setLoadError('');
 
     postsApi.getById(id)
       .then((response) => {
@@ -118,17 +119,18 @@ export default function CreateEditPostPage() {
         const draft = readDraft(draftKey);
         setForm(draft || postForm);
         setDraftRestored(Boolean(draft));
+        setLoadError('');
       })
       .catch((requestError) => {
         if (!active || generation !== postGenerationRef.current) return;
         setLoadError(getApiMessage(requestError, 'Không thể tải bài viết cần chỉnh sửa.'));
       })
       .finally(() => {
-        if (active && generation === postGenerationRef.current) setLoadingPost(false);
+        if (active && generation === postGenerationRef.current) setLoadedPostRequestKey(postRequestKey);
       });
 
     return () => { active = false; };
-  }, [draftKey, id, isEdit, postVersion]);
+  }, [draftKey, id, isEdit, postRequestKey]);
 
   const updateField = (field) => (event) => {
     const value = event.target.value;
