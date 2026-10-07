@@ -174,7 +174,7 @@ export default function AdminSessionsPage() {
               <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
               Trung tâm bảo mật
             </div>
-            <h1 className="mt-5 max-w-3xl font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-6xl lg:text-7xl">Phiên truy cập<span className="text-red-500">.</span></h1>
+            <h1 className="mt-5 max-w-3xl font-editorial text-5xl font-bold leading-tight text-white sm:text-6xl lg:text-7xl">Phiên truy cập<span className="text-red-500">.</span></h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-zinc-300 sm:text-lg">Theo dõi các phiên đăng nhập đang mở. Thu hồi phiên lạ để buộc tài khoản đăng nhập lại.</p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <button type="button" onClick={loadSessions} disabled={loading} className="group inline-flex min-h-12 cursor-pointer items-center gap-2.5 rounded-lg bg-red-700 px-5 text-sm font-black text-white shadow-lg shadow-red-950/20 transition-colors duration-200 hover:bg-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-wait disabled:opacity-60">

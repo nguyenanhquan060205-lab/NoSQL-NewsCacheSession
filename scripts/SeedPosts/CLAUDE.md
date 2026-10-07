@@ -1,71 +1,101 @@
 # Script seed dữ liệu mẫu (SCRUM-32 — SV3 — Nguyễn Xuân Định)
 
-Yêu cầu đề bài: **tối thiểu 100 bài viết hoàn chỉnh có tiêu đề, nội dung và hình
-ảnh**. Phần này ăn 1.0đ trong barem.
+Yêu cầu: **tối thiểu 100 bài viết hoàn chỉnh có tiêu đề, nội dung và hình ảnh**.
+Script cho phép seed nhiều hơn 100 bài bằng `--count` và kiểm tra an toàn bằng
+`--dry-run`.
 
-## ⛔ Tên field phải là camelCase, và phải bọc ObjectId
+## Hợp đồng dữ liệu
 
-Đây là chỗ dễ sai nhất của cả dự án. API C# ánh xạ document bằng đúng các tên dưới
-đây (ép bằng `[BsonElement]` trong `Models/Post.cs`). **Ghi sai tên field thì insert
-vẫn thành công nhưng API đọc ra bài viết rỗng tiêu đề, `createdAt = 01/01/0001`,
-trang chủ trắng và sort sai** — và sẽ không ai hiểu vì sao.
+- Database mặc định `newsdb`, collections `posts` và `categories`.
+- URI/database có thể cấu hình qua `MONGODB_URI` và `MONGODB_DATABASE`.
+- Field MongoDB phải theo camelCase: `title`, `slug`, `content`, `imageUrl`,
+  `categoryId`, `authorId`, `views`, `isDeleted`, `deletedAt`, `createdAt`,
+  `updatedAt`.
+- `categoryId` phải là `bson.ObjectId` trỏ tới category thực. `authorId` seed là
+  `null` theo thiết kế.
+- Mỗi bài có URL ảnh nhiếp ảnh Picsum ổn định theo slug seed.
+- Lượt xem ban đầu là `0`. Tiêu đề/nội dung do Faker sinh cho dữ liệu kiểm thử,
+  không phải tin báo chí được thu thập từ nguồn thật.
+- Slug dùng số thứ tự cố định, không phụ thuộc phiên bản Faker; tăng `--count`
+  sẽ thêm các bài còn thiếu.
+- Script không xóa collection: tạo category nếu chưa có và upsert bài theo slug ổn
+  định; các document đã tồn tại được giữ nguyên.
 
-Database `newsdb`, collection `posts` và `categories`.
+## Cài đặt, chạy và kiểm thử
 
-```python
-from pymongo import MongoClient
-from bson import ObjectId
-from faker import Faker
-import random
-from datetime import datetime, timezone
+Chạy từ thư mục gốc repo:
 
-client = MongoClient("mongodb://localhost:27017")
-db = client["newsdb"]
-faker = Faker("vi_VN")
-
-# 1) Chuyên mục trước — API tạo/sửa bài viết kiểm tra categoryId có tồn tại thật,
-#    không có chuyên mục thì trả về 400.
-db.categories.delete_many({})
-categories = [
-    {"name": "Thời sự",   "slug": "thoi-su",   "description": None, "createdAt": datetime.now(timezone.utc)},
-    {"name": "Thể thao",  "slug": "the-thao",  "description": None, "createdAt": datetime.now(timezone.utc)},
-    {"name": "Công nghệ", "slug": "cong-nghe", "description": None, "createdAt": datetime.now(timezone.utc)},
-    {"name": "Giải trí",  "slug": "giai-tri",  "description": None, "createdAt": datetime.now(timezone.utc)},
-    {"name": "Kinh doanh","slug": "kinh-doanh","description": None, "createdAt": datetime.now(timezone.utc)},
-]
-category_ids = db.categories.insert_many(categories).inserted_ids
-
-# 2) 100 bài viết
-db.posts.delete_many({})
-posts = []
-for i in range(100):
-    title = faker.sentence(nb_words=8).rstrip(".")
-    created = faker.date_time_this_year(tzinfo=timezone.utc)
-    posts.append({
-        "title": title,
-        "slug": f"{slugify(title)}-{i}",              # slug phải UNIQUE (có unique index)
-        "content": "\n\n".join(faker.paragraphs(nb=5)),
-        "imageUrl": f"https://picsum.photos/seed/{i}/800/450",
-        "categoryId": ObjectId(random.choice(category_ids)),   # ⛔ ObjectId, KHÔNG phải str
-        "authorId": None,                              # None là hợp lệ với dữ liệu seed
-        "views": random.randint(0, 500),
-        "isDeleted": False,
-        "deletedAt": None,
-        "createdAt": created,
-        "updatedAt": created,
-    })
-db.posts.insert_many(posts)
-print(f"Đã nạp {len(category_ids)} chuyên mục và {len(posts)} bài viết vào newsdb.")
+```powershell
+python -m pip install -r scripts/SeedPosts/requirements.txt
+python scripts/SeedPosts/seed.py --dry-run
+python scripts/SeedPosts/seed.py
+python scripts/SeedPosts/seed.py --count 1000
+python -m unittest discover -s scripts/SeedPosts -p "test_*.py"
 ```
 
-`slugify` cần bỏ dấu tiếng Việt và chỉ giữ `a-z0-9-` (dùng `unidecode` hoặc
-`python-slugify`), giống hàm `ToSlug` trong `PostsController.cs`. Thêm hậu tố `-{i}`
-vì `posts.slug` có **unique index** — trùng slug là `DuplicateKeyError` giữa lúc chạy.
+`--count` phải từ 100 trở lên. Nếu dữ liệu cũ dùng field PascalCase, cần backup
+và xử lý riêng; script không tự xóa dữ liệu để “dọn” collection.
 
-## Tại sao phải `delete_many` trước
+Seed trực tiếp MongoDB trước khi demo API. Nếu danh sách đã được cache trước khi
+seed, cache danh sách cũ tự hết hạn sau 3 phút theo hợp đồng Redis. Script không
+sửa session hay bộ đếm lượt xem Redis. Ảnh Picsum cần kết nối Internet.
 
-Dữ liệu test cũ (ghi trước 30/09/2026) dùng tên field PascalCase nên API không đọc
-được nữa. Chạy lại seed mà không xóa thì trang chủ sẽ lẫn cả bài "hỏng" lẫn bài tốt.
+## Nạp 10.000 bài thật có ảnh
+
+```powershell
+python scripts/SeedPosts/import_real.py --count 10000 --wikinews-count 100 --hide-samples
+python scripts/SeedPosts/verify_real.py --count 10000
+python scripts/SeedPosts/categorize_real.py --dry-run
+python scripts/SeedPosts/categorize_real.py
+```
+
+- 9.900 bài Wikipedia tiếng Việt từ dataset `wikimedia/wikipedia`, bản
+  `20231101.vi`: https://huggingface.co/datasets/wikimedia/wikipedia
+- 100 tin Wikinews tiếng Anh từ API nguồn gốc: https://en.wikinews.org
+- Wikipedia là nội dung bách khoa; Wikinews là tin tức cộng đồng. Không gắn nhãn
+  chúng là bài báo của VnExpress/Tuổi Trẻ hay cơ quan báo chí khác.
+- Chọn bài có văn bản từ 500 ký tự trở lên và ảnh Wikimedia Commons có tác giả,
+  giấy phép mở. Không dùng ảnh Faker/Picsum cho bài thật. Nguồn bài, nguồn ảnh,
+  tác giả ảnh và giấy phép được ghi cuối `content`, hiển thị trên web; không thêm
+  field vào model/backend của thành viên khác.
+- `createdAt` của Wikipedia là ngày snapshot 01/11/2023, không phải ngày xuất bản
+  bài báo. Wikinews dùng ngày sửa đổi nguồn, có ghi rõ trong phần nguồn.
+- Slug chứa nguồn + page ID. Chạy lại giữ bài đã có và tiếp tục nạp phần thiếu.
+  Ghi MongoDB trước, `INCR posts:ver` sau mỗi batch; không xóa session hoặc counter.
+- Sau khi import, bài Wikipedia được phân vào 5 chủ đề hiện có bằng quy tắc từ
+  tiêu đề và phần mở đầu: Công nghệ, Giải trí, Kinh doanh, Thể thao, Thời sự.
+  Đây là phân loại tự động theo từ khóa, có thể cần chỉnh tay khi biên tập.
+  Bài thiếu tín hiệu rõ ràng giữ ở Tri thức; Wikinews giữ ở Tin quốc tế.
+  Phần ghi nguồn không tham gia phân loại. Có `--dry-run` để rà trước khi cập nhật.
+  Script chỉ đổi `categoryId`, giữ nguyên nguồn, ảnh, nội dung và lượt xem;
+  sau đó xóa cache chi tiết bị ảnh hưởng và tăng phiên bản danh sách.
+- `--hide-samples` ẩn mềm các bài Faker chưa sửa do script cũ tạo, sau khi nạp đủ
+  bài thật. Có thể khôi phục bằng cách bỏ `isDeleted`; không xóa vật lý bài.
+- Dataset tải về và manifest ghi nguồn nằm trong `scripts/SeedPosts/data/`, được
+  bỏ qua bởi Git. Máy cần khoảng 1 GB dung lượng trống và Internet. Ảnh dùng URL
+  gốc thumbnail Commons, không upload bản sao; có thể phụ thuộc nguồn bên ngoài.
+- `REDIS_URL` mặc định `redis://localhost:6379/0`; MongoDB dùng cấu hình ở trên.
+
+## Bổ sung tin gần đây qua RSS — demo phi lợi nhuận
+
+```powershell
+python import_rss.py --dry-run
+python import_rss.py --days 14 --per-category 30
+```
+
+Lấy tối đa 30 tin/chuyên mục từ RSS chính thức VnExpress: Thời sự, Thể thao,
+Khoa học công nghệ, Giải trí, Kinh doanh. Chỉ lưu tiêu đề, tóm tắt, ảnh RSS
+và link nguồn; không cào toàn bài, không sửa ngày xuất bản. Bài ghi rõ là
+tóm tắt RSS và có nút đọc toàn bài trên VnExpress.
+
+Điều khoản: https://vnexpress.net/rss — dùng cho cá nhân/phi lợi nhuận, ghi
+rõ nguồn và phải ngừng phân phối nếu nguồn yêu cầu. Không áp dụng mặc định
+cho triển khai thương mại.
+
+Script giữ nguyên bài đã có, lượt xem và nội dung chỉnh sửa; không xóa bài cũ.
+MongoDB được ghi trước rồi `INCR posts:ver`. Bộ Wikipedia/Wikinews vẫn có
+10.000 bài; tin RSS là phần bổ sung, tổng active có thể lớn hơn 10.000.
+Chạy lại script để lấy tin mới; **chưa có lịch tự cập nhật nền**.
 
 ## Việc liên quan: SCRUM-36 — seed key Redis
 

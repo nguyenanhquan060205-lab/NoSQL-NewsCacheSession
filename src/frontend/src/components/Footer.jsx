@@ -24,7 +24,7 @@ export default function Footer() {
         <div className="grid gap-8 border-b border-zinc-800 py-10 sm:grid-cols-2 lg:grid-cols-[1.25fr_0.75fr_0.75fr_0.75fr] lg:py-12">
           <section>
             <Link to="/" className="inline-flex min-h-11 items-center" aria-label="NewsCache - Trang chủ">
-              <span className="font-editorial text-2xl font-black tracking-[-0.05em] text-white">
+              <span className="font-editorial text-2xl font-black text-white">
                 NEWS<span className="text-red-700">CACHE</span>
               </span>
             </Link>

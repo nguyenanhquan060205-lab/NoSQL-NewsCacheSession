@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { getPostSource } from '../utils/postSource';
 
 function formatPostDate(value) {
   const date = new Date(value);
@@ -37,8 +38,10 @@ function PostImage({ post, eager = false, className = '' }) {
 }
 
 function Meta({ post }) {
+  const source = getPostSource(post);
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-zinc-500">
+      {source ? <span className="text-red-700">{source.label} ·</span> : null}
       <time dateTime={post.createdAt}>{formatPostDate(post.createdAt)}</time>
       <span aria-hidden="true" className="size-1 rounded-full bg-red-500" />
       <span className="inline-flex items-center gap-1.5">
