@@ -12,7 +12,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.19.0",
+    "@fontsource-variable/noto-serif": "^5.3.0",
+    "@fontsource-variable/roboto": "^5.3.0",
+    "axios": "^1.20.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2"
@@ -30,6 +32,6 @@
     "oxlint": "^1.75.0",
     "tailwindcss": "^4.3.3",
     "vite": "^8.2.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }

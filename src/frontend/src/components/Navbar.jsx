@@ -86,7 +86,7 @@ export default function Navbar() {
           </div>
 
           <Link to="/" className="group inline-flex min-h-10 items-center justify-center sm:col-start-2 sm:min-h-12" aria-label="NewsCache - Trang chủ">
-            <span className="font-editorial text-[1.35rem] font-black leading-none tracking-[-0.07em] text-zinc-950 sm:text-[2.65rem]">
+            <span className="font-editorial text-[1.35rem] font-black leading-tight text-zinc-950 sm:text-[2.65rem]">
               NEWS<span className="text-red-700">CACHE</span>
             </span>
           </Link>

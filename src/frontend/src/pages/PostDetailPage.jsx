@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { postsApi } from '../services/api';
+import ArticleText from '../components/ArticleText';
+import { getPostSource } from '../utils/postSource';
 
 const pendingPostRequests = new Map();
 
@@ -146,12 +148,12 @@ export default function PostDetailPage() {
             <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12" /></svg>
             Trở về trang tin
           </Link>
-          <p className="mt-7 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-red-400"><span className="size-1.5 rounded-full bg-red-500" aria-hidden="true" />Bài viết</p>
+          <p className="mt-7 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-red-400"><span className="size-1.5 rounded-full bg-red-500" aria-hidden="true" />{getPostSource(post)?.label || 'Bài viết'}</p>
           <h1 className="font-editorial mt-3 break-words text-4xl font-black leading-[1.08] text-white sm:text-5xl lg:text-6xl">
             {post.title}
           </h1>
           <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm font-semibold text-zinc-300">
-            <time dateTime={post.createdAt}>Đăng ngày {formatPostDate(post.createdAt)}</time>
+            <time dateTime={post.createdAt}>{getPostSource(post)?.dateLabel || 'Đăng ngày'} {formatPostDate(post.createdAt)}</time>
             <span aria-hidden="true" className="size-1 rounded-full bg-red-500" />
             <span aria-live="polite" className="inline-flex items-center gap-1.5">
               <svg viewBox="0 0 24 24" className="size-4 text-red-400" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.5" /></svg>
@@ -180,8 +182,13 @@ export default function PostDetailPage() {
 
         <div className="mx-auto mt-9 max-w-3xl sm:mt-12">
           <div className="break-words whitespace-pre-line border-l-2 border-zinc-200 pl-5 text-[1.0625rem] leading-8 text-zinc-700 sm:pl-7 sm:text-lg sm:leading-9">
-            {post.content}
+            <ArticleText content={post.content} />
           </div>
+          {getPostSource(post)?.url ? (
+            <a href={getPostSource(post).url} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex min-h-11 items-center rounded-lg bg-red-700 px-5 font-bold text-white transition-colors hover:bg-red-800">
+              Đọc toàn bài trên VnExpress ↗
+            </a>
+          ) : null}
           <div className="mt-12 border-t border-zinc-200 pt-6">
             <Link to="/" className="inline-flex min-h-11 items-center text-sm font-black text-red-700 transition-colors hover:text-red-900">
               Xem thêm bài viết khác
