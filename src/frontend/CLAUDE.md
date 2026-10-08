@@ -101,9 +101,12 @@ Session TTL 30 phút, sliding. `GET /api/auth/me` trả `401` nghĩa là phiên 
 
 ## Badge CACHE HIT/MISS (SCRUM-38)
 
-Backend **chưa** trả thông tin hit/miss. Cần SV2 thêm header `X-Cache: HIT|MISS` trong
-`GetById` — đã ghi vào việc cần làm của SV2, nhưng hãy xác nhận với Quan trước khi làm
-UI, đừng tự đoán tên header.
+Backend đã trả header `X-Cache: HIT|MISS` trong `GetById`. Trang chi tiết đọc metadata
+`cacheInfo` từ `postsApi.getById`, hiển thị badge và thời gian riêng của GET đo bằng
+`performance.now()`. Không suy luận HIT/MISS theo tốc độ, không tính POST tăng view.
+Header thiếu/lạ khi GET thành công → `CACHE UNKNOWN`; lỗi GET giữ màn hình lỗi hiện có.
+Giữ proxy `/api` same-origin. Deployment khác origin cần nhóm duyệt CORS credentials,
+allowed origin và exposed `X-Cache`; không tự sửa backend trong ticket frontend.
 
 ## Chạy
 
