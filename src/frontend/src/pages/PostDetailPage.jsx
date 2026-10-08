@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { postsApi } from '../services/api';
 import ArticleText from '../components/ArticleText';
+import CacheStatusBadge from '../components/CacheStatusBadge';
 import { getPostSource } from '../utils/postSource';
 
 const pendingPostRequests = new Map();
@@ -58,6 +59,7 @@ export default function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [viewError, setViewError] = useState(false);
+  const [cacheInfo, setCacheInfo] = useState(null);
   const [requestVersion, setRequestVersion] = useState(0);
 
   useEffect(() => {
@@ -67,12 +69,14 @@ export default function PostDetailPage() {
       setLoading(true);
       setError('');
       setViewError(false);
+      setCacheInfo(null);
 
       try {
         const response = await getPostByIdOnce(id);
         if (!active) return;
 
         setPost(response.data);
+        setCacheInfo({ ...response.cacheInfo, postId: id });
         setLoading(false);
 
         if (countedPostIdRef.current !== id) {
@@ -95,6 +99,7 @@ export default function PostDetailPage() {
         if (!active) return;
 
         setPost(null);
+        setCacheInfo(null);
         setError(requestError.response?.data?.message || 'Không thể tải bài viết. Vui lòng thử lại.');
       } finally {
         if (active) setLoading(false);
@@ -160,6 +165,7 @@ export default function PostDetailPage() {
               {Number(post.views || 0).toLocaleString('vi-VN')} lượt xem
             </span>
           </div>
+          {cacheInfo?.postId === id && post.id === id ? <CacheStatusBadge cacheInfo={cacheInfo} /> : null}
           {viewError ? (
             <p role="status" className="mt-3 text-sm text-amber-800">
               Lượt xem chưa được cập nhật, nhưng bạn vẫn có thể đọc bài viết.

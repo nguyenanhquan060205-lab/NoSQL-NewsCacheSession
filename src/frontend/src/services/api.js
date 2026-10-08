@@ -34,6 +34,27 @@ export const authApi = {
 
 // ========== POSTS API ==========
 
+function readTimestamp() {
+  try {
+    const value = globalThis.performance?.now();
+    return Number.isFinite(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function readCacheStatus(headers) {
+  try {
+    const value = typeof headers?.get === 'function'
+      ? headers.get('x-cache')
+      : Object.entries(headers || {}).find(([name]) => name.toLowerCase() === 'x-cache')?.[1];
+    const status = typeof value === 'string' ? value.trim().toUpperCase() : '';
+    return status === 'HIT' || status === 'MISS' ? status : 'UNKNOWN';
+  } catch {
+    return 'UNKNOWN';
+  }
+}
+
 export const postsApi = {
   // Danh sách có phân trang và có thể lọc theo chuyên mục.
   getAll: (page = 1, pageSize = 10, categoryId = '') =>
@@ -45,9 +66,18 @@ export const postsApi = {
       },
     }),
 
-  // TODO [SV3]: Gọi GET /api/posts/:id — ĐÂY LÀ ENDPOINT CACHE-ASIDE
-  getById: (id) =>
-    api.get(`/posts/${id}`),
+  // Đo riêng GET thật; các subscriber dùng chung request sẽ nhận cùng metadata.
+  getById: async (id) => {
+    const startedAt = readTimestamp();
+    const response = await api.get(`/posts/${id}`);
+    const finishedAt = readTimestamp();
+    const elapsed = startedAt !== null && finishedAt !== null && finishedAt >= startedAt
+      ? finishedAt - startedAt
+      : null;
+    const durationMs = Number.isFinite(elapsed) ? elapsed : null;
+
+    return { ...response, cacheInfo: { status: readCacheStatus(response.headers), durationMs } };
+  },
 
   // TODO [SV3]: Gọi POST /api/posts
   create: (data) =>
