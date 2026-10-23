@@ -42,7 +42,16 @@ public class RedisSessionService : ISessionService
 
     public async Task RefreshSessionAsync(string sessionId, TimeSpan ttl)
     {
-        await _db.KeyExpireAsync(Key(sessionId), ttl);
+        var key = Key(sessionId);
+
+        // Gia hạn TTL + ghi lastActive trong một transaction, chỉ chạy khi key còn tồn tại:
+        // phiên vừa hết hạn hoặc bị admin thu hồi mà HSET vẫn chạy thì sẽ tạo lại một Hash
+        // không TTL, nằm vĩnh viễn trong Redis.
+        var tran = _db.CreateTransaction();
+        tran.AddCondition(Condition.KeyExists(key));
+        _ = tran.HashSetAsync(key, "lastActive", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+        _ = tran.KeyExpireAsync(key, ttl);
+        await tran.ExecuteAsync();
     }
 
     public async Task RemoveSessionAsync(string sessionId)

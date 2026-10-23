@@ -88,24 +88,28 @@ public class SessionServiceTests
     }
 
     [Fact]
-    public async Task RefreshSessionAsync_ShouldCallKeyExpire()
+    public async Task RefreshSessionAsync_ShouldExpireAndTouchLastActiveInConditionalTransaction()
     {
         // Arrange
         var sessionId = "sess-123";
+        var key = $"session:{sessionId}";
         var ttl = TimeSpan.FromMinutes(30);
 
-        _mockDb.Setup(db => db.KeyExpireAsync(
-                $"session:{sessionId}",
-                It.Is<TimeSpan?>(t => t == ttl),
-                It.IsAny<ExpireWhen>(),
-                It.IsAny<CommandFlags>()))
-            .ReturnsAsync(true);
+        var mockTran = new Mock<ITransaction>();
+        mockTran.Setup(t => t.ExecuteAsync(It.IsAny<CommandFlags>())).ReturnsAsync(true);
+        _mockDb.Setup(db => db.CreateTransaction(It.IsAny<object>())).Returns(mockTran.Object);
 
         // Act
         await _service.RefreshSessionAsync(sessionId, ttl);
 
-        // Assert
-        _mockDb.Verify(db => db.KeyExpireAsync($"session:{sessionId}", ttl, It.IsAny<ExpireWhen>(), It.IsAny<CommandFlags>()), Times.Once);
+        // Assert — EXPIRE + HSET lastActive cùng một transaction, chỉ chạy khi key còn tồn tại
+        mockTran.Verify(t => t.AddCondition(It.IsAny<Condition>()), Times.Once);
+        mockTran.Verify(t => t.KeyExpireAsync(key, ttl, It.IsAny<ExpireWhen>(), It.IsAny<CommandFlags>()), Times.Once);
+        mockTran.Verify(t => t.HashSetAsync(key, "lastActive", It.IsAny<RedisValue>(), It.IsAny<When>(), It.IsAny<CommandFlags>()), Times.Once);
+        mockTran.Verify(t => t.ExecuteAsync(It.IsAny<CommandFlags>()), Times.Once);
+
+        // Không ghi thẳng ngoài transaction
+        _mockDb.Verify(db => db.KeyExpireAsync(It.IsAny<RedisKey>(), It.IsAny<TimeSpan?>(), It.IsAny<ExpireWhen>(), It.IsAny<CommandFlags>()), Times.Never);
     }
 
     [Fact]
