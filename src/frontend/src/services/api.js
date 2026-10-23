@@ -80,6 +80,12 @@ export const postsApi = {
   },
 
   // TODO [SV3]: Gọi POST /api/posts
+  uploadImage: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/images', formData);
+  },
+
   create: (data) =>
     api.post('/posts', data),
 

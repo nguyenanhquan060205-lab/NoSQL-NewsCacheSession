@@ -8,7 +8,7 @@ import CreateEditPostPage from './CreateEditPostPage';
 
 vi.mock('../context/useAuth', () => ({ useAuth: vi.fn() }));
 vi.mock('../services/api', () => ({
-  postsApi: { getById: vi.fn(), create: vi.fn(), update: vi.fn() },
+  postsApi: { getById: vi.fn(), create: vi.fn(), update: vi.fn(), uploadImage: vi.fn() },
   categoriesApi: { getAll: vi.fn() },
 }));
 
@@ -35,6 +35,9 @@ describe('CreateEditPostPage', () => {
     categoriesApi.getAll.mockResolvedValue({ data: [{ id: 'cat-1', name: 'Công nghệ' }] });
     postsApi.create.mockResolvedValue({ data: { id: 'new-post' } });
     postsApi.update.mockResolvedValue({ data: { id: 'post-1' } });
+    postsApi.uploadImage.mockResolvedValue({
+      data: { imageUrl: 'https://res.cloudinary.com/demo/image/upload/posts/test.jpg', imagePublicId: 'posts/test' },
+    });
     postsApi.getById.mockResolvedValue({
       data: { id: 'post-1', title: 'Tiêu đề cũ', content: 'Nội dung cũ', imageUrl: null, categoryId: 'cat-1' },
     });
@@ -84,6 +87,27 @@ describe('CreateEditPostPage', () => {
 
     expect(await screen.findByText('URL hình ảnh phải bắt đầu bằng http:// hoặc https://.')).toBeInTheDocument();
     expect(postsApi.create).not.toHaveBeenCalled();
+  });
+
+  it('upload ảnh trước rồi gửi URL Cloudinary khi tạo bài', async () => {
+    const user = userEvent.setup();
+    const file = new File(['fake-image'], 'cover.png', { type: 'image/png' });
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:preview');
+    renderForm();
+
+    await user.type(screen.getByLabelText('Tiêu đề'), 'Bài có ảnh');
+    await user.type(screen.getByLabelText('Nội dung'), 'Nội dung có ảnh');
+    await user.upload(screen.getByLabelText('Tải ảnh lên'), file);
+    await user.click(screen.getByRole('button', { name: 'Đăng bài' }));
+
+    await waitFor(() => expect(postsApi.uploadImage).toHaveBeenCalledWith(file));
+    expect(postsApi.create).toHaveBeenCalledWith({
+      title: 'Bài có ảnh',
+      content: 'Nội dung có ảnh',
+      imageUrl: 'https://res.cloudinary.com/demo/image/upload/posts/test.jpg',
+      imagePublicId: 'posts/test',
+      categoryId: null,
+    });
   });
 
   it('khóa hai submit xảy ra cùng lượt event', async () => {
