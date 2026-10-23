@@ -1,1 +1,3 @@
-data/
+data/*
+!data/newsdb-posts.json.gz
+!data/newsdb-categories.json.gz
