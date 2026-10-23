@@ -4,7 +4,9 @@ import { useAuth } from '../context/useAuth';
 import { categoriesApi, postsApi } from '../services/api';
 import { getApiMessage, getApiStatus, getValidationErrors } from '../utils/apiError';
 
-const EMPTY_FORM = { title: '', content: '', imageUrl: '', categoryId: '' };
+const EMPTY_FORM = { title: '', content: '', imageUrl: '', imagePublicId: '', categoryId: '' };
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 function readDraft(key) {
   try {
@@ -15,6 +17,7 @@ function readDraft(key) {
       title: typeof draft.title === 'string' ? draft.title : '',
       content: typeof draft.content === 'string' ? draft.content : '',
       imageUrl: typeof draft.imageUrl === 'string' ? draft.imageUrl : '',
+      imagePublicId: typeof draft.imagePublicId === 'string' ? draft.imagePublicId : '',
       categoryId: typeof draft.categoryId === 'string' ? draft.categoryId : '',
     };
   } catch {
@@ -39,12 +42,14 @@ function clearDraft(key) {
 }
 
 function normalizePostPayload(form) {
-  return {
+  const payload = {
     title: form.title.trim(),
     content: form.content.trim(),
     imageUrl: form.imageUrl.trim() || null,
     categoryId: form.categoryId || null,
   };
+  if (form.imagePublicId) payload.imagePublicId = form.imagePublicId;
+  return payload;
 }
 
 function isValidImageUrl(value) {
@@ -75,6 +80,8 @@ export default function CreateEditPostPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [draftRestored, setDraftRestored] = useState(Boolean(initialDraft));
   const submitLockRef = useRef(false);
   const postGenerationRef = useRef(0);
@@ -113,6 +120,7 @@ export default function CreateEditPostPage() {
           title: response.data?.title || '',
           content: response.data?.content || '',
           imageUrl: response.data?.imageUrl || '',
+          imagePublicId: response.data?.imagePublicId || '',
           categoryId: response.data?.categoryId || '',
         };
         loadedPostRef.current = postForm;
@@ -134,10 +142,43 @@ export default function CreateEditPostPage() {
 
   const updateField = (field) => (event) => {
     const value = event.target.value;
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+      ...(field === 'imageUrl' ? { imagePublicId: '' } : {}),
+    }));
+    if (field === 'imageUrl' && imageFile) {
+      setImageFile(null);
+      setImagePreview('');
+    }
     setFieldErrors((current) => ({ ...current, [field]: '' }));
     setSubmitError('');
   };
+
+  const updateImageFile = (event) => {
+    const file = event.target.files?.[0] || null;
+    if (!file) return;
+
+    if (!IMAGE_TYPES.includes(file.type)) {
+      setFieldErrors((current) => ({ ...current, imageUrl: 'Chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP.' }));
+      event.target.value = '';
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      setFieldErrors((current) => ({ ...current, imageUrl: 'Ảnh không được vượt quá 5 MB.' }));
+      event.target.value = '';
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setFieldErrors((current) => ({ ...current, imageUrl: '' }));
+    setSubmitError('');
+  };
+
+  useEffect(() => () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+  }, [imagePreview]);
 
   const discardDraft = () => {
     clearDraft(draftKey);
@@ -156,7 +197,7 @@ export default function CreateEditPostPage() {
     const nextFieldErrors = {};
     if (!payload.title) nextFieldErrors.title = 'Tiêu đề không được để trống.';
     if (!payload.content) nextFieldErrors.content = 'Nội dung không được để trống.';
-    if (!isValidImageUrl(payload.imageUrl)) nextFieldErrors.imageUrl = 'URL hình ảnh phải bắt đầu bằng http:// hoặc https://.';
+    if (!imageFile && !isValidImageUrl(payload.imageUrl)) nextFieldErrors.imageUrl = 'URL hình ảnh phải bắt đầu bằng http:// hoặc https://.';
 
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
@@ -170,9 +211,14 @@ export default function CreateEditPostPage() {
     setFieldErrors({});
 
     try {
+      let uploadedImage = null;
+      if (imageFile) uploadedImage = (await postsApi.uploadImage(imageFile)).data;
+      const nextPayload = uploadedImage
+        ? { ...payload, imageUrl: uploadedImage.imageUrl, imagePublicId: uploadedImage.imagePublicId }
+        : payload;
       const response = isEdit
-        ? await postsApi.update(id, payload)
-        : await postsApi.create(payload);
+        ? await postsApi.update(id, nextPayload)
+        : await postsApi.create(nextPayload);
       clearDraft(draftKey);
       navigate(`/posts/${response.data?.id || id}`);
     } catch (requestError) {
@@ -278,10 +324,15 @@ export default function CreateEditPostPage() {
               </div>
 
               <div className="mt-5">
-                <label htmlFor="post-image" className="text-sm font-black text-zinc-900">URL hình ảnh</label>
+                <label htmlFor="post-image-file" className="text-sm font-black text-zinc-900">Tải ảnh lên</label>
+                <input id="post-image-file" type="file" accept="image/jpeg,image/png,image/webp" onChange={updateImageFile} aria-describedby="post-image-help" className="mt-2 block min-h-12 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-950 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-900 file:px-3 file:py-2 file:text-sm file:font-bold file:text-white" />
+                {imagePreview || form.imageUrl ? (
+                  <img src={imagePreview || form.imageUrl} alt="Xem trước ảnh bài viết" className="mt-3 aspect-video w-full rounded-xl object-cover" />
+                ) : null}
+                <label htmlFor="post-image" className="mt-4 block text-sm font-black text-zinc-900">URL hình ảnh</label>
                 <input id="post-image" type="url" value={form.imageUrl} onChange={updateField('imageUrl')} aria-invalid={Boolean(fieldErrors.imageUrl)} aria-describedby={fieldErrors.imageUrl ? 'post-image-error' : 'post-image-help'} className="mt-2 min-h-12 w-full rounded-xl border border-zinc-300 px-3 text-base text-zinc-950 outline-none focus:border-red-700 focus:ring-4 focus:ring-red-100" placeholder="https://..." />
                 {fieldErrors.imageUrl ? <p id="post-image-error" className="mt-2 text-sm font-semibold text-red-700">{fieldErrors.imageUrl}</p> : null}
-                <p id="post-image-help" className="mt-2 text-xs leading-5 text-zinc-500">SCRUM-29 sử dụng URL ngoài; tải tệp ảnh thuộc SCRUM-39.</p>
+                <p id="post-image-help" className="mt-2 text-xs leading-5 text-zinc-500">JPEG, PNG hoặc WebP, tối đa 5 MB. Ảnh được lưu trên Cloudinary.</p>
               </div>
             </section>
 

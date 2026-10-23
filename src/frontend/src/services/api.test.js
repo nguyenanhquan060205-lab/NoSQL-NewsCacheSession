@@ -114,3 +114,17 @@ describe('postsApi thông tin cache của GET chi tiết', () => {
     expect(response).not.toHaveProperty('cacheInfo');
   });
 });
+
+describe('postsApi upload ảnh', () => {
+  it('gửi multipart field file tới endpoint upload', async () => {
+    const file = new File(['image'], 'cover.png', { type: 'image/png' });
+    const response = { data: { imageUrl: 'https://res.cloudinary.com/demo/cover.png' } };
+    http.post.mockResolvedValue(response);
+
+    expect(await postsApi.uploadImage(file)).toBe(response);
+    const [url, body] = http.post.mock.calls[0];
+    expect(url).toBe('/images');
+    expect(body).toBeInstanceOf(FormData);
+    expect(body.get('file')).toBe(file);
+  });
+});

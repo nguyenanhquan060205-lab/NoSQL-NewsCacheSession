@@ -26,6 +26,9 @@ public class Post
     [BsonElement("imageUrl")]
     public string? ImageUrl { get; set; }
 
+    [BsonElement("imagePublicId")]
+    public string? ImagePublicId { get; set; }
+
     /// <summary>ObjectId tham chiếu collection "categories".</summary>
     [BsonElement("categoryId")]
     [BsonRepresentation(BsonType.ObjectId)]

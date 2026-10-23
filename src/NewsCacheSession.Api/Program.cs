@@ -39,6 +39,8 @@ builder.Services.AddScoped<ICacheService, RedisCacheService>();
 builder.Services.AddScoped<ISessionService, RedisSessionService>();
 builder.Services.AddScoped<ISessionQueryService, RedisSessionQueryService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+builder.Services.AddHttpClient<IImageStorageService, CloudinaryImageStorageService>();
 
 // Tạo index MongoDB lúc khởi động (posts.slug, users.username, categories.slug) — xem docs/mongodb-schema.md
 builder.Services.AddHostedService<MongoIndexInitializer>();

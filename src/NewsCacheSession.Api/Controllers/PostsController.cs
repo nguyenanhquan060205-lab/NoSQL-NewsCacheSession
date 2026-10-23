@@ -17,6 +17,8 @@ public class PostsController : ControllerBase
     private readonly MongoContext _mongo;
     private readonly ICacheService _cacheService;
     private readonly ICurrentUserService _currentUser;
+    private readonly IImageStorageService _imageStorage;
+    private readonly ILogger<PostsController> _logger;
 
     // ===== Hợp đồng keyspace Redis — xem docs/redis-keyspace.md =====
     // Mọi key liên quan bài viết nằm chung namespace "post:" / "posts:" để SCAN gom được hết.
@@ -50,11 +52,18 @@ public class PostsController : ControllerBase
     private static readonly FilterDefinition<Post> NotDeleted =
         Builders<Post>.Filter.Ne(p => p.IsDeleted, true);
 
-    public PostsController(MongoContext mongo, ICacheService cacheService, ICurrentUserService currentUser)
+    public PostsController(
+        MongoContext mongo,
+        ICacheService cacheService,
+        ICurrentUserService currentUser,
+        IImageStorageService imageStorage,
+        ILogger<PostsController> logger)
     {
         _mongo = mongo;
         _cacheService = cacheService;
         _currentUser = currentUser;
+        _imageStorage = imageStorage;
+        _logger = logger;
     }
 
     /// <summary>
@@ -254,6 +263,7 @@ public class PostsController : ControllerBase
             Slug = await GenerateUniqueSlugAsync(request.Title),
             Content = request.Content,
             ImageUrl = request.ImageUrl,
+            ImagePublicId = request.ImagePublicId,
             CategoryId = NullIfEmpty(request.CategoryId),
             AuthorId = current.UserId,
             CreatedAt = now,
@@ -292,10 +302,12 @@ public class PostsController : ControllerBase
         if (!CanModify(post, current))
             return StatusCode(StatusCodes.Status403Forbidden, new { message = "Bạn không có quyền sửa bài viết này." });
 
+        var oldImagePublicId = post.ImagePublicId;
         var update = Builders<Post>.Update
             .Set(p => p.Title, request.Title.Trim())
             .Set(p => p.Content, request.Content)
             .Set(p => p.ImageUrl, request.ImageUrl)
+            .Set(p => p.ImagePublicId, request.ImagePublicId)
             .Set(p => p.CategoryId, NullIfEmpty(request.CategoryId))
             .Set(p => p.UpdatedAt, DateTime.UtcNow);
 
@@ -307,6 +319,7 @@ public class PostsController : ControllerBase
         // Cache Invalidation — DB gốc đã đổi nên phải bỏ bản cache cũ:
         //   1. xóa cache nội dung bài viết
         //   2. tăng phiên bản để cache danh sách (tiêu đề/chuyên mục có thể đã đổi) hết hiệu lực
+        await TryDeleteImageAsync(oldImagePublicId, request.ImagePublicId);
         await Task.WhenAll(
             _cacheService.RemoveAsync(CacheKey(id)),
             BumpListVersionAsync());
@@ -341,6 +354,7 @@ public class PostsController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, new { message = "Bạn không có quyền xóa bài viết này." });
         }
 
+        var oldImagePublicId = post.ImagePublicId;
         var now = DateTime.UtcNow;
         var update = Builders<Post>.Update
             .Set(post => post.IsDeleted, true)
@@ -356,6 +370,7 @@ public class PostsController : ControllerBase
         // Cache Invalidation: xóa bản cache nội dung + hạ hiệu lực cache danh sách.
         // KHÔNG xóa post:{id}:views — đây là xóa mềm (bài có thể phục hồi) và lượt xem
         // là số liệu tích lũy, phải để job flush của SV2 chốt về MongoDB trước.
+        await TryDeleteImageAsync(oldImagePublicId, null);
         await Task.WhenAll(
             _cacheService.RemoveAsync(CacheKey(id)),
             BumpListVersionAsync());
@@ -402,6 +417,22 @@ public class PostsController : ControllerBase
     /// Bài không có authorId thuộc trách nhiệm quản trị, nên không để ai đăng nhập cũng sửa
     /// được như trước — nếu không thì mọi tài khoản đều xóa được 100 bài seed.
     /// </summary>
+    private async Task TryDeleteImageAsync(string? oldPublicId, string? currentPublicId)
+    {
+        if (string.IsNullOrWhiteSpace(oldPublicId) ||
+            string.Equals(oldPublicId, currentPublicId, StringComparison.Ordinal))
+            return;
+
+        try
+        {
+            await _imageStorage.DeleteAsync(oldPublicId);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(exception, "Không thể xóa ảnh cũ trên Cloudinary: {PublicId}", oldPublicId);
+        }
+    }
+
     private static bool CanModify(Post post, CurrentUser current) =>
         current.IsAdmin || (!string.IsNullOrEmpty(post.AuthorId) && post.AuthorId == current.UserId);
 
