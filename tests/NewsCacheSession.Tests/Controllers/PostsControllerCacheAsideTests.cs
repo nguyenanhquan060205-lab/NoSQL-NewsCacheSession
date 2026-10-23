@@ -108,6 +108,49 @@ public class PostsControllerCacheAsideTests
     }
 
     [Fact]
+    public async Task GetAll_WhenVersionKeyMissing_ShouldReadVersionZeroKey()
+    {
+        // Arrange — posts:ver chưa tồn tại thì key danh sách phải mang v0,
+        // để INCR đầu tiên (trả về 1) chuyển sang key mới
+        var pagedResponse = new PagedPostsResponse { Page = 1, PageSize = 10, TotalItems = 0, TotalPages = 0 };
+        _mockCache.Setup(c => c.GetAsync("posts:ver")).ReturnsAsync((string?)null);
+        _mockCache.Setup(c => c.GetAsync("posts:cat:all:p1:v0"))
+            .ReturnsAsync(JsonSerializer.Serialize(pagedResponse));
+
+        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        var httpContext = new DefaultHttpContext();
+        controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
+        // Act
+        var result = await controller.GetAll(page: 1, pageSize: 10) as OkObjectResult;
+
+        // Assert
+        result.Should().NotBeNull();
+        httpContext.Response.Headers["X-Cache"].ToString().Should().Be("HIT");
+        _mockCache.Verify(c => c.GetAsync("posts:cat:all:p1:v1"), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAll_WhenCachedPageSizeDiffers_ShouldFallThroughToMongo()
+    {
+        // Arrange — bản cache là của pageSize=3, request hỏi pageSize=12
+        var cachedPage = new PagedPostsResponse { Page = 1, PageSize = 3, TotalItems = 100, TotalPages = 34 };
+        _mockCache.Setup(c => c.GetAsync("posts:ver")).ReturnsAsync("1");
+        _mockCache.Setup(c => c.GetAsync("posts:cat:all:p1:v1"))
+            .ReturnsAsync(JsonSerializer.Serialize(cachedPage));
+
+        // MongoContext null: lệch pageSize phải rơi xuống nhánh đọc MongoDB chứ không trả bản cache
+        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+
+        // Act
+        var act = () => controller.GetAll(page: 1, pageSize: 12);
+
+        // Assert
+        await act.Should().ThrowAsync<NullReferenceException>();
+    }
+
+    [Fact]
     public async Task GetAll_WithInvalidCategoryId_ShouldReturnBadRequest()
     {
         // Arrange

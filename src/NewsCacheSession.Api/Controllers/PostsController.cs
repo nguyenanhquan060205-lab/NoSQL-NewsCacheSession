@@ -73,18 +73,22 @@ public class PostsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(categoryId) && !ObjectId.TryParse(categoryId, out _))
             return BadRequest(new { message = "ID chuyên mục không hợp lệ." });
 
-        // 1. Đọc phiên bản danh sách hiện tại từ Redis
+        // 1. Đọc phiên bản danh sách hiện tại từ Redis.
+        //    Chưa có key thì coi là phiên bản 0, KHÔNG phải 1: INCR đầu tiên trên key chưa tồn tại
+        //    trả về 1, mặc định cũng là 1 thì lần sửa/xóa đầu tiên không làm cache cũ hết hiệu lực.
         var verStr = await _cacheService.GetAsync(ListVersionKey);
-        var ver = string.IsNullOrEmpty(verStr) ? "1" : verStr;
+        var ver = string.IsNullOrEmpty(verStr) ? "0" : verStr;
         var catKey = string.IsNullOrWhiteSpace(categoryId) ? "all" : categoryId;
-        var cacheKey = $"posts:cat:{catKey}:p{page}:v{ver}";
+        var cacheKey = $"{ListCachePrefix}{catKey}:p{page}:v{ver}";
 
-        // 2. Thử đọc từ Redis Cache
+        // 2. Thử đọc từ Redis Cache.
+        //    Key không chứa pageSize (giữ đúng keyspace đã chốt), nên phải đối chiếu pageSize trong
+        //    bản cache: lệch thì coi như MISS, nếu không sẽ trả nhầm số bài của lần gọi trước.
         var cached = await _cacheService.GetAsync(cacheKey);
         if (!string.IsNullOrEmpty(cached))
         {
             var cachedResult = JsonSerializer.Deserialize<PagedPostsResponse>(cached);
-            if (cachedResult != null)
+            if (cachedResult != null && cachedResult.PageSize == pageSize)
             {
                 Response.Headers["X-Cache"] = "HIT";
                 return Ok(cachedResult);
