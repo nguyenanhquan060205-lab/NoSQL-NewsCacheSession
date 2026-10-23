@@ -21,14 +21,7 @@ public class RedisCacheService : ICacheService
     public async Task<string?> GetAsync(string key)
     {
         var value = await _db.StringGetAsync(key);
-        if (value.HasValue)
-        {
-            Interlocked.Increment(ref _hits);
-            return value.ToString();
-        }
-
-        Interlocked.Increment(ref _misses);
-        return null;
+        return value.HasValue ? value.ToString() : null;
     }
 
     public async Task SetAsync(string key, string value, TimeSpan ttl)
@@ -54,6 +47,14 @@ public class RedisCacheService : ICacheService
     public async Task<bool> ReleaseLockAsync(string key, string value)
     {
         return await _db.LockReleaseAsync(key, value);
+    }
+
+    public void RecordLookup(bool hit)
+    {
+        if (hit)
+            Interlocked.Increment(ref _hits);
+        else
+            Interlocked.Increment(ref _misses);
     }
 
     public CacheStats GetStats()

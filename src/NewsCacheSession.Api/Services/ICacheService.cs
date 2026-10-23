@@ -16,6 +16,12 @@ public interface ICacheService
     Task<long> IncrementAsync(string key);
     Task<bool> AcquireLockAsync(string key, string value, TimeSpan expiry);
     Task<bool> ReleaseLockAsync(string key, string value);
+
+    /// <summary>
+    /// Ghi nhận kết quả tra cache của MỘT request (khớp header X-Cache). GetAsync không tự đếm,
+    /// vì nó còn dùng để đọc bộ đếm views và posts:ver — không phải lượt tra cache.
+    /// </summary>
+    void RecordLookup(bool hit);
     CacheStats GetStats();
     Task MarkDirtyViewAsync(string postId);
     Task<List<string>> GetAndClearDirtyViewsAsync();

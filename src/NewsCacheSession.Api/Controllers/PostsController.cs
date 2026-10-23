@@ -90,7 +90,7 @@ public class PostsController : ControllerBase
             var cachedResult = JsonSerializer.Deserialize<PagedPostsResponse>(cached);
             if (cachedResult != null && cachedResult.PageSize == pageSize)
             {
-                Response.Headers["X-Cache"] = "HIT";
+                MarkCacheResult(hit: true);
                 return Ok(cachedResult);
             }
         }
@@ -120,7 +120,7 @@ public class PostsController : ControllerBase
 
         // 4. Ghi ngược vào Redis kèm TTL 3 phút
         await _cacheService.SetAsync(cacheKey, JsonSerializer.Serialize(response), ListCacheTtl);
-        Response.Headers["X-Cache"] = "MISS";
+        MarkCacheResult(hit: false);
 
         return Ok(response);
     }
@@ -161,7 +161,7 @@ public class PostsController : ControllerBase
             if (cachedPost != null)
             {
                 await OverrideRealtimeViewsAsync(cachedPost, viewsKey);
-                Response.Headers["X-Cache"] = "HIT";
+                MarkCacheResult(hit: true);
                 return Ok(cachedPost);
             }
         }
@@ -188,7 +188,7 @@ public class PostsController : ControllerBase
                 if (cachedPost != null)
                 {
                     await OverrideRealtimeViewsAsync(cachedPost, viewsKey);
-                    Response.Headers["X-Cache"] = "HIT";
+                    MarkCacheResult(hit: true);
                     return Ok(cachedPost);
                 }
             }
@@ -205,7 +205,7 @@ public class PostsController : ControllerBase
             // 5. Ghi cache với TTL 10 phút
             await _cacheService.SetAsync(cacheKey, JsonSerializer.Serialize(response), CacheTtl);
 
-            Response.Headers["X-Cache"] = "MISS";
+            MarkCacheResult(hit: false);
             return Ok(response);
         }
         finally
@@ -213,6 +213,16 @@ public class PostsController : ControllerBase
             // 6. Giải phóng lock an toàn
             await _cacheService.ReleaseLockAsync(lockKey, lockToken);
         }
+    }
+
+    /// <summary>
+    /// Gắn header <c>X-Cache</c> và ghi nhận thống kê hit/miss ở cùng một chỗ, đúng một lần cho
+    /// mỗi request — để số liệu <c>/api/cache/stats</c> khớp với badge HIT/MISS trên trang web.
+    /// </summary>
+    private void MarkCacheResult(bool hit)
+    {
+        Response.Headers["X-Cache"] = hit ? "HIT" : "MISS";
+        _cacheService.RecordLookup(hit);
     }
 
     private async Task OverrideRealtimeViewsAsync(PostResponse post, string viewsKey)

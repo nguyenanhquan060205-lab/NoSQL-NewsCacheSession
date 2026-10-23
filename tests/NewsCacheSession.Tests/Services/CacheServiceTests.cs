@@ -22,7 +22,7 @@ public class CacheServiceTests
     }
 
     [Fact]
-    public async Task GetAsync_WhenKeyExists_ShouldIncrementHitsAndReturnValue()
+    public async Task GetAsync_WhenKeyExists_ShouldReturnValueWithoutCountingStats()
     {
         // Arrange
         _mockDb.Setup(db => db.StringGetAsync("key1", It.IsAny<CommandFlags>()))
@@ -31,16 +31,13 @@ public class CacheServiceTests
         // Act
         var result = await _service.GetAsync("key1");
 
-        // Assert
+        // Assert — GetAsync còn dùng đọc bộ đếm views/posts:ver nên không được tự đếm hit/miss
         result.Should().Be("cached_value");
-        var stats = _service.GetStats();
-        stats.Hits.Should().Be(1);
-        stats.Misses.Should().Be(0);
-        stats.TotalRequests.Should().Be(1);
+        _service.GetStats().TotalRequests.Should().Be(0);
     }
 
     [Fact]
-    public async Task GetAsync_WhenKeyDoesNotExist_ShouldIncrementMissesAndReturnNull()
+    public async Task GetAsync_WhenKeyDoesNotExist_ShouldReturnNullWithoutCountingStats()
     {
         // Arrange
         _mockDb.Setup(db => db.StringGetAsync("missing_key", It.IsAny<CommandFlags>()))
@@ -51,10 +48,21 @@ public class CacheServiceTests
 
         // Assert
         result.Should().BeNull();
+        _service.GetStats().TotalRequests.Should().Be(0);
+    }
+
+    [Fact]
+    public void RecordLookup_ShouldCountHitsAndMissesAndComputeHitRate()
+    {
+        // Act — 4 HIT + 1 MISS như kịch bản demo tải bài viết 5 lần
+        for (var i = 0; i < 4; i++) _service.RecordLookup(hit: true);
+        _service.RecordLookup(hit: false);
+
+        // Assert
         var stats = _service.GetStats();
-        stats.Hits.Should().Be(0);
+        stats.Hits.Should().Be(4);
         stats.Misses.Should().Be(1);
-        stats.TotalRequests.Should().Be(1);
+        stats.HitRate.Should().Be(80);
     }
 
     [Fact]

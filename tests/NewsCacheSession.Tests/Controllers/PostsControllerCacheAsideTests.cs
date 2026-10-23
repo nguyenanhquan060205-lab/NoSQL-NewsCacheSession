@@ -54,6 +54,10 @@ public class PostsControllerCacheAsideTests
         response.Should().NotBeNull();
         response!.Title.Should().Be("Cached Title");
         response.Views.Should().Be(25); // Views was overridden by realtime counter
+
+        // Một request HIT chỉ được tính đúng một lần, dù có đọc thêm key views
+        _mockCache.Verify(c => c.RecordLookup(true), Times.Once);
+        _mockCache.Verify(c => c.RecordLookup(false), Times.Never);
     }
 
     [Fact]
