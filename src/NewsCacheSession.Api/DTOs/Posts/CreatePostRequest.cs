@@ -12,6 +12,8 @@ public class CreatePostRequest
 
     public string? ImageUrl { get; set; }
 
+    public string? ImagePublicId { get; set; }
+
     /// <summary>ObjectId của chuyên mục (tuỳ chọn).</summary>
     public string? CategoryId { get; set; }
 }
