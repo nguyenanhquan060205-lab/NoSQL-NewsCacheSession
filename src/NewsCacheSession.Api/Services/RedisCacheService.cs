@@ -74,10 +74,14 @@ public class RedisCacheService : ICacheService
     public async Task<List<string>> GetAndClearDirtyViewsAsync()
     {
         const string setKey = "posts:dirty_views";
-        var members = await _db.SetMembersAsync(setKey);
-        if (members == null || members.Length == 0) return new List<string>();
 
-        await _db.KeyDeleteAsync(setKey);
+        // SPOP lấy và xóa trong cùng một lệnh nguyên tử. SMEMBERS rồi DEL thì ID nào được SADD
+        // chen vào giữa hai lệnh sẽ bị xóa mất dấu mà chưa kịp đồng bộ về MongoDB.
+        // ID thêm vào sau SCARD vẫn nằm lại trong Set, lượt flush sau sẽ lấy.
+        var count = await _db.SetLengthAsync(setKey);
+        if (count == 0) return new List<string>();
+
+        var members = await _db.SetPopAsync(setKey, count);
         return members.Select(m => m.ToString()).Where(s => !string.IsNullOrEmpty(s)).ToList();
     }
 

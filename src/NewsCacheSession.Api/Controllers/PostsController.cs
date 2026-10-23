@@ -373,6 +373,16 @@ public class PostsController : ControllerBase
             return BadRequest(new { message = "ID bài viết không hợp lệ." });
 
         var viewsKey = ViewsKey(id);
+
+        // Chỉ tra MongoDB ở lượt xem đầu tiên (key đếm chưa có): ID đúng cú pháp nhưng không trỏ
+        // tới bài nào thì không được tạo key đếm — key này không TTL nên sẽ nằm trong Redis vĩnh viễn.
+        if (string.IsNullOrEmpty(await _cacheService.GetAsync(viewsKey)))
+        {
+            var exists = await _mongo.Posts.Find(NotDeleted & Builders<Post>.Filter.Eq(p => p.Id, id)).AnyAsync();
+            if (!exists)
+                return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
+        }
+
         var newCount = await _cacheService.IncrementAsync(viewsKey);
 
         // Đánh dấu dirty để worker định kỳ flush về MongoDB (Write-Behind)

@@ -66,6 +66,38 @@ public class CacheServiceTests
     }
 
     [Fact]
+    public async Task GetAndClearDirtyViewsAsync_ShouldPopAtomicallyInsteadOfMembersThenDelete()
+    {
+        // Arrange
+        _mockDb.Setup(db => db.SetLengthAsync("posts:dirty_views", It.IsAny<CommandFlags>()))
+            .ReturnsAsync(2);
+        _mockDb.Setup(db => db.SetPopAsync("posts:dirty_views", 2, It.IsAny<CommandFlags>()))
+            .ReturnsAsync(new RedisValue[] { "id1", "id2" });
+
+        // Act
+        var ids = await _service.GetAndClearDirtyViewsAsync();
+
+        // Assert
+        ids.Should().BeEquivalentTo("id1", "id2");
+        _mockDb.Verify(db => db.KeyDeleteAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAndClearDirtyViewsAsync_WhenSetEmpty_ShouldNotPop()
+    {
+        // Arrange
+        _mockDb.Setup(db => db.SetLengthAsync("posts:dirty_views", It.IsAny<CommandFlags>()))
+            .ReturnsAsync(0);
+
+        // Act
+        var ids = await _service.GetAndClearDirtyViewsAsync();
+
+        // Assert
+        ids.Should().BeEmpty();
+        _mockDb.Verify(db => db.SetPopAsync(It.IsAny<RedisKey>(), It.IsAny<long>(), It.IsAny<CommandFlags>()), Times.Never);
+    }
+
+    [Fact]
     public async Task AcquireLockAsync_WhenNotExists_ShouldReturnTrue()
     {
         // Arrange

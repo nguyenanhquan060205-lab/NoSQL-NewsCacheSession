@@ -28,6 +28,9 @@ public class ViewCountSyncTests
         var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
 
+        // Key đếm đã tồn tại nên không cần tra MongoDB (MongoContext để null)
+        _mockCache.Setup(c => c.GetAsync($"post:{postId}:views"))
+            .ReturnsAsync("14");
         _mockCache.Setup(c => c.IncrementAsync($"post:{postId}:views"))
             .ReturnsAsync(15);
 
