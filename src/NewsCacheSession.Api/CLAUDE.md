@@ -9,12 +9,12 @@ MongoDB.Driver; Redis truy cập qua StackExchange.Redis.
 |---|---|
 | `Models/*`, `DTOs/*`, `Utils/SlugHelper.cs`, `Data/MongoIndexInitializer.cs` | SV1 — Hồ Ngọc Phương Như |
 | `Controllers/AuthController.cs`, `PostsController.cs`, `CategoriesController.cs` | SV1 — Hồ Ngọc Phương Như |
-| ↳ **trừ** `PostsController.GetById` và `PostsController.IncrementView` | SV2 — Nguyễn Anh Quan |
+| ↳ **trừ** `PostsController.GetById` và `PostsController.IncrementView` | SV2 — Nguyễn Anh Quân |
 | `Services/ICurrentUserService.cs`, `CurrentUserService.cs` | SV1 — Hồ Ngọc Phương Như |
 | `Services/ISessionQueryService.cs`, `RedisSessionQueryService.cs` | SV1 — Hồ Ngọc Phương Như |
-| `Services/ICacheService.cs`, `RedisCacheService.cs` | SV2 — Nguyễn Anh Quan |
-| `Services/ISessionService.cs`, `RedisSessionService.cs` | SV2 — Nguyễn Anh Quan |
-| `Middleware/SessionAuthMiddleware.cs` | SV2 — Nguyễn Anh Quan |
+| `Services/ICacheService.cs`, `RedisCacheService.cs` | SV2 — Nguyễn Anh Quân |
+| `Services/ISessionService.cs`, `RedisSessionService.cs` | SV2 — Nguyễn Anh Quân |
+| `Middleware/SessionAuthMiddleware.cs` | SV2 — Nguyễn Anh Quân |
 | `Program.cs`, `appsettings.json`, `Data/MongoContext.cs` | dùng chung — hỏi cả nhóm |
 
 **Không sửa file của người khác.** Thấy cần sửa thì báo chủ sở hữu.
@@ -84,19 +84,34 @@ context.Items["LoginAt"]  = session["loginAt"];  // tuỳ chọn
 - **Soft delete lọc bằng `Ne(p => p.IsDeleted, true)`**, không phải `Eq(..., false)` —
   để khớp cả document cũ chưa có field `isDeleted`.
 
-## Việc còn thiếu của SV2
+## Trạng thái phần SV2 — ĐÃ XONG (cập nhật 23/10/2026)
 
-1. **`SessionAuthMiddleware`** — hiện là stub. Gán đủ bộ `HttpContext.Items` như hợp
-   đồng ở trên, và refresh TTL (sliding expiration) qua `RefreshSessionAsync`.
-2. **`GetById` — luồng Cache-Aside** + khóa chống stampede. Nhớ ghi đè
-   `PostResponse.Views` bằng giá trị đọc từ `post:{id}:views` nếu key tồn tại; không
-   làm thì UI hiện views đứng im trong khi RedisInsight nhảy số.
-3. **`IncrementView`** — `INCR post:{id}:views` + job flush ngược về `posts.views`.
-4. **Cache danh sách trang chủ (SCRUM-26)** — đọc `posts:ver` rồi ghép vào key.
-5. **TTL session vào `appsettings.json`** (`SessionSettings:TtlMinutes`). Đang hardcode
-   30 phút ở `AuthController.SessionTtl`; middleware hardcode lần nữa là lệch.
-6. **Header `X-Cache: HIT|MISS`** trong `GetById` — SCRUM-38 của SV3 cần để hiện badge.
-   Chốt tên header này rồi nói cho SV3.
+Danh sách "việc còn thiếu" trước đây đã lạc hậu. Kiểm trên `main` (`b2adb96`) thì cả
+sáu việc đều đã hiện thực xong, **đừng làm lại**:
+
+| Việc | File | Commit |
+|---|---|---|
+| `SessionAuthMiddleware` gán đủ `HttpContext.Items` + sliding TTL | `Middleware/SessionAuthMiddleware.cs` | `c8431bf` |
+| `GetById` — Cache-Aside + khóa chống stampede + ghi đè views realtime | `Controllers/PostsController.cs` | `fecb48e` |
+| `IncrementView` — `INCR` + worker flush về `posts.views` | `PostsController`, `Services/ViewCountSyncWorker.cs` | `f9babea` |
+| Cache danh sách theo số phiên bản (SCRUM-26) | `PostsController.GetAll` | `ef43a20` |
+| `SessionSettings:TtlMinutes` trong `appsettings.json` | `appsettings.json`, `Program.cs` | `c8431bf` |
+| Header `X-Cache: HIT\|MISS` | `PostsController.GetById` | `fecb48e` |
+
+⚠️ **Đừng đổi tên header `X-Cache` một mình** — frontend đọc nó để hiện badge HIT/MISS
+(`src/frontend/src/components/CacheStatusBadge.jsx`, SCRUM-38).
+
+## Test
+
+```bash
+dotnet test                                                    # toàn bộ, dùng mock — không cần Redis/Mongo chạy
+dotnet test --filter FullyQualifiedName~PostsControllerCacheAsideTests
+```
+
+⚠️ `tests/NewsCacheSession.Tests.csproj` nhắm `net10.0` còn API nhắm `net8.0`. Máy chỉ
+có SDK 9 sẽ **fail ngay lúc build** (`NETSDK1045`) — đây là lệch TargetFramework,
+**không phải lỗi code**. Build riêng API vẫn chạy:
+`dotnet build src/NewsCacheSession.Api/NewsCacheSession.Api.csproj`.
 
 ## Chạy
 

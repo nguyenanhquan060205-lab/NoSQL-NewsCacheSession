@@ -1,4 +1,4 @@
-# Chốt thiết kế dữ liệu (SV1) — những gì Quan và Định cần biết
+# Chốt thiết kế dữ liệu (SV1) — những gì Quân và Định cần biết
 
 Ngày chốt: 30/09/2026. Người chốt: Hồ Ngọc Phương Như (SV1 — Data Architect & CRUD Lead).
 
@@ -115,7 +115,7 @@ Câu để trả lời phản biện: *"Cách này có mở rộng được khô
 `user_sessions:{userId}` chứa các sessionId để liệt kê không cần quét keyspace; đánh
 đổi là phải cập nhật Set mỗi lần tạo/xóa phiên.
 
-## 6. Việc còn lại của Quan
+## 6. Việc còn lại của Quân
 
 1. **`SessionAuthMiddleware`** (đang là stub) — gán đủ bộ `HttpContext.Items`:
    `UserId`, `Username`, **`Role`** (bắt buộc), `LoginAt` (tuỳ chọn). `CurrentUserService`
