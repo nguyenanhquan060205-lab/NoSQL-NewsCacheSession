@@ -88,7 +88,7 @@ giữ nó thêm trọn một vòng TTL.
 | | Thành viên | Vai trò |
 |---|---|---|
 | SV1 | Hồ Ngọc Phương Như | Data Architect & CRUD Lead |
-| SV2 | Nguyễn Anh Quan | Advanced Query Specialist |
+| SV2 | Nguyễn Anh Quân | Advanced Query Specialist |
 | SV3 | Nguyễn Xuân Định | Fullstack Integrator & DB Tester |
 
 Nhóm chia việc theo ticket Jira (`docs/nosql-jira-tasks.csv`). **Không sửa file của
@@ -111,7 +111,7 @@ Data/MongoIndexInitializer.cs
 docs/mongodb-schema.md, docs/redis-keyspace.md, docs/chot-thiet-ke-sv1.md
 ```
 
-### SV2 — Nguyễn Anh Quan (Advanced Query Specialist)
+### SV2 — Nguyễn Anh Quân (Advanced Query Specialist)
 Middleware Cache-Aside, TTL/EXPIRE, Cache Invalidation, bộ đếm INCR.
 
 ```

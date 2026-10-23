@@ -55,10 +55,14 @@ news-mongo  Up  0.0.0.0:27017->27017/tcp      ← container nay giữ cổng
 | 10 | Mục "Tài liệu" thiếu `bao-cao-nguyen-ly-cache-aside.md`, `checklist-barem.md`, file này | 🟡 | — |
 
 Thêm: README ghi **"Nguyễn Anh Quan"** trong khi tên tác giả trên git là
-**"Nguyễn Anh Quân"** → cần chốt tên đúng.
+**"Nguyễn Anh Quân"**. ✅ Đã chốt tên đúng là **Quân** và sửa trong `README.md`,
+`AGENTS.md`, `src/NewsCacheSession.Api/CLAUDE.md`, `docs/chot-thiet-ke-sv1.md`.
 
-⚠️ `README.md` là **file dùng chung** — theo quy ước nhóm phải hỏi trước khi sửa. File
-này chỉ **ghi nhận**, chưa sửa README.
+✅ **Đã sửa `README.md`** theo cả 10 điểm trên (có sự đồng ý của nhóm, vì là file dùng
+chung). Hai chỗ vẫn còn ghi "Quan" nhưng **không sửa vì là file của người khác**:
+`docs/bao-cao-nguyen-ly-cache-aside.md` (Quân tự ghi tên mình) và
+`plans/2026-10-04-.../plan.md`. `docs/nosql-jira-tasks.csv` giữ "Quan" vì toàn file dùng
+chữ không dấu.
 
 ---
 
@@ -217,9 +221,9 @@ lần, không phải 40 lần.** Lý do: MongoDB chạy local, dữ liệu nhỏ
 
 ## 7. Việc còn phải làm sau lần rà soát này
 
-- [ ] Sửa `README.md` theo 10 điểm ở mục 2 — **cần cả nhóm đồng ý** (file dùng chung)
+- [x] ~~Sửa `README.md` theo 10 điểm ở mục 2~~ — **xong 23/10**
+- [x] ~~Chốt tên "Quan" hay "Quân"~~ — **Quân**, đã sửa trong các file của SV1
 - [ ] Chốt xử lý lệch `net10.0` / `net8.0` của project test — **cần hỏi Quân**
-- [ ] Chốt tên "Quan" hay "Quân"
 - [ ] SV3 chạy benchmark ở quy mô lớn hơn để có số đo thuyết phục (SCRUM-40/41/42)
 - [ ] Trước demo: `db.posts.drop()` + `db.users.drop()` rồi seed lại sạch, vì DB hiện có
       lẫn 1 bài và 2 tài khoản tạo ra khi smoke test (`admin`, `demo_user`)

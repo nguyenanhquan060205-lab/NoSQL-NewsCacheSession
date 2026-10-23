@@ -9,12 +9,12 @@ MongoDB.Driver; Redis truy cập qua StackExchange.Redis.
 |---|---|
 | `Models/*`, `DTOs/*`, `Utils/SlugHelper.cs`, `Data/MongoIndexInitializer.cs` | SV1 — Hồ Ngọc Phương Như |
 | `Controllers/AuthController.cs`, `PostsController.cs`, `CategoriesController.cs` | SV1 — Hồ Ngọc Phương Như |
-| ↳ **trừ** `PostsController.GetById` và `PostsController.IncrementView` | SV2 — Nguyễn Anh Quan |
+| ↳ **trừ** `PostsController.GetById` và `PostsController.IncrementView` | SV2 — Nguyễn Anh Quân |
 | `Services/ICurrentUserService.cs`, `CurrentUserService.cs` | SV1 — Hồ Ngọc Phương Như |
 | `Services/ISessionQueryService.cs`, `RedisSessionQueryService.cs` | SV1 — Hồ Ngọc Phương Như |
-| `Services/ICacheService.cs`, `RedisCacheService.cs` | SV2 — Nguyễn Anh Quan |
-| `Services/ISessionService.cs`, `RedisSessionService.cs` | SV2 — Nguyễn Anh Quan |
-| `Middleware/SessionAuthMiddleware.cs` | SV2 — Nguyễn Anh Quan |
+| `Services/ICacheService.cs`, `RedisCacheService.cs` | SV2 — Nguyễn Anh Quân |
+| `Services/ISessionService.cs`, `RedisSessionService.cs` | SV2 — Nguyễn Anh Quân |
+| `Middleware/SessionAuthMiddleware.cs` | SV2 — Nguyễn Anh Quân |
 | `Program.cs`, `appsettings.json`, `Data/MongoContext.cs` | dùng chung — hỏi cả nhóm |
 
 **Không sửa file của người khác.** Thấy cần sửa thì báo chủ sở hữu.
