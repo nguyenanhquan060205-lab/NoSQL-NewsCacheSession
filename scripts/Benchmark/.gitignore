@@ -1,0 +1,4 @@
+__pycache__/
+# Chỉ commit lần chạy chính thức; các lần chạy nháp giữ ở máy
+results/*
+!results/*-chinh-thuc/
