@@ -19,14 +19,15 @@ public class SessionAuthMiddleware
 
     public async Task InvokeAsync(HttpContext context, ISessionService sessionService, IConfiguration config)
     {
-        var sessionId = context.Request.Cookies[CurrentUserService.SessionCookieName]
+        var cookieSessionId = context.Request.Cookies[CurrentUserService.SessionCookieName];
+        var sessionId = cookieSessionId
                      ?? context.Request.Headers[CurrentUserService.SessionHeaderName].FirstOrDefault();
 
         if (!string.IsNullOrWhiteSpace(sessionId))
         {
             try
             {
-                await AuthenticateAsync(context, sessionService, config, sessionId);
+                await AuthenticateAsync(context, sessionService, config, sessionId, fromCookie: cookieSessionId != null);
             }
             catch (Exception ex) when (RedisAvailability.IsOutage(ex))
             {
@@ -42,7 +43,7 @@ public class SessionAuthMiddleware
     }
 
     private static async Task AuthenticateAsync(HttpContext context, ISessionService sessionService,
-        IConfiguration config, string sessionId)
+        IConfiguration config, string sessionId, bool fromCookie)
     {
         var session = await sessionService.GetSessionAsync(sessionId);
         if (session == null || !session.TryGetValue("userId", out var userId) || string.IsNullOrWhiteSpace(userId))
@@ -61,6 +62,19 @@ public class SessionAuthMiddleware
         var ttl = TimeSpan.FromMinutes(ttlMinutes > 0 ? ttlMinutes : 30);
         await sessionService.RefreshSessionAsync(sessionId, ttl);
 
+        // Cookie cũng phải trượt theo TTL trên Redis: cookie chỉ đặt Max-Age lúc đăng nhập thì
+        // trình duyệt tự xóa nó sau 30 phút, người đang dùng liên tục vẫn bị đăng xuất.
+        // Phiên gửi qua header (Swagger/Postman) không có cookie để cấp lại.
+        if (fromCookie)
+        {
+            context.Response.Cookies.Append(CurrentUserService.SessionCookieName, sessionId, new CookieOptions
+            {
+                HttpOnly = true,
+                SameSite = SameSiteMode.Lax,
+                Secure = context.Request.IsHttps,
+                MaxAge = ttl
+            });
+        }
     }
 }
 
