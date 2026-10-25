@@ -38,10 +38,11 @@ public class NewsApiFactory : WebApplicationFactory<HealthController>
     private readonly string _mongoUri;
     private readonly string _redisEndpoint;
     private readonly int? _sessionTtlMinutes;
+    private readonly bool _ownsDatabase;
     private ConnectionMultiplexer? _redisAdmin;
     private MongoClient? _mongoClient;
 
-    public string DatabaseName { get; } = DbPrefix + Guid.NewGuid().ToString("N")[..12];
+    public string DatabaseName { get; }
 
     public NewsApiFactory() : this(null, null, null) { }
 
@@ -52,8 +53,11 @@ public class NewsApiFactory : WebApplicationFactory<HealthController>
     /// <param name="mongoUri">Đè chuỗi kết nối Mongo (ví dụ trỏ vào cổng chết để giả lập Mongo sập).</param>
     /// <param name="redisEndpoint">Đè endpoint Redis (ví dụ cổng chết để giả lập Redis sập).</param>
     /// <param name="sessionTtlMinutes">Đè <c>SessionSettings:TtlMinutes</c>.</param>
-    internal NewsApiFactory(string? mongoUri, string? redisEndpoint, int? sessionTtlMinutes)
+    /// <param name="databaseName">Dùng chung DB của factory khác (không drop khi dispose).</param>
+    internal NewsApiFactory(string? mongoUri, string? redisEndpoint, int? sessionTtlMinutes, string? databaseName = null)
     {
+        DatabaseName = databaseName ?? DbPrefix + Guid.NewGuid().ToString("N")[..12];
+        _ownsDatabase = databaseName == null;
         _mongoUri = mongoUri ?? Environment.GetEnvironmentVariable("NEWS_IT_MONGO") ?? "mongodb://localhost:27019";
         _redisEndpoint = redisEndpoint ?? Environment.GetEnvironmentVariable("NEWS_IT_REDIS") ?? "localhost:6380";
         _sessionTtlMinutes = sessionTtlMinutes;
@@ -193,7 +197,7 @@ public class NewsApiFactory : WebApplicationFactory<HealthController>
     {
         try
         {
-            if (_mongoClient != null || Enabled)
+            if (_ownsDatabase && Enabled)
                 await Mongo.Client.DropDatabaseAsync(DatabaseName);
         }
         catch
