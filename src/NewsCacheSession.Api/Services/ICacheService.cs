@@ -8,6 +8,12 @@ public class CacheStats
     public double HitRate => TotalRequests == 0 ? 0 : Math.Round((double)Hits / TotalRequests * 100, 2);
 }
 
+/// <summary>
+/// Truy cập cache Redis. Khi Redis sập: <see cref="GetAsync"/> trả null (coi như MISS),
+/// <see cref="SetAsync"/>/<see cref="RemoveAsync"/>/<see cref="ReleaseLockAsync"/> bỏ qua và ghi log;
+/// các thao tác cần giá trị thật (bộ đếm, lock, Set dirty) ném lỗi để
+/// <see cref="RedisAvailability.IsOutage"/> nhận ra.
+/// </summary>
 public interface ICacheService
 {
     Task<string?> GetAsync(string key);

@@ -17,6 +17,7 @@ public class SessionServiceTests
         _mockDb = new Mock<IDatabase>();
         _mockRedis = new Mock<IConnectionMultiplexer>();
         _mockRedis.Setup(r => r.GetDatabase(It.IsAny<int>(), It.IsAny<object>())).Returns(_mockDb.Object);
+        _mockRedis.Setup(r => r.IsConnected).Returns(true);
         _service = new RedisSessionService(_mockRedis.Object);
     }
 
@@ -59,6 +60,15 @@ public class SessionServiceTests
         dict.Should().ContainKey("lastActive").WhoseValue.Should().NotBeNullOrEmpty();
 
         _mockDb.Verify(db => db.KeyExpireAsync($"session:{sessionId}", ttl, It.IsAny<ExpireWhen>(), It.IsAny<CommandFlags>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetSessionAsync_WhenRedisDisconnected_ShouldThrowImmediately()
+    {
+        _mockRedis.Setup(r => r.IsConnected).Returns(false);
+
+        await _service.Invoking(s => s.GetSessionAsync("sess-1")).Should().ThrowAsync<RedisConnectionException>();
+        _mockDb.Verify(db => db.HashGetAllAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>()), Times.Never);
     }
 
     [Fact]

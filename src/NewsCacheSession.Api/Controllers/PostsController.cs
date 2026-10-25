@@ -148,6 +148,12 @@ public class PostsController : ControllerBase
         return Ok(PostResponse.FromModel(post));
     }
 
+    // Chờ request đang giữ lock nạp cache: tối đa 40 × 50ms = 2 giây. Lock có TTL 5 giây nên
+    // tiến trình giữ lock chết giữa chừng sẽ chặn tới 5 giây — không đợi tới lúc đó, đọc thẳng MongoDB.
+    private const int LockWaitAttempts = 40;
+    private static readonly TimeSpan LockWaitDelay = TimeSpan.FromMilliseconds(50);
+    private static readonly TimeSpan LockTtl = TimeSpan.FromSeconds(5);
+
     /// <summary>
     /// Lấy chi tiết bài viết theo ID — ⭐ Cache-Aside Pattern.
     /// Bước 1: Kiểm tra Redis (cache hit?)
@@ -161,55 +167,63 @@ public class PostsController : ControllerBase
 
         var cacheKey = CacheKey(id);
         var viewsKey = ViewsKey(id);
+        var lockKey = $"lock:{cacheKey}";
+        var lockToken = Guid.NewGuid().ToString("N");
 
-        // 1. Thử đọc từ Redis Cache (Cache HIT)
-        var cached = await _cacheService.GetAsync(cacheKey);
-        if (!string.IsNullOrEmpty(cached))
+        for (var attempt = 0; attempt < LockWaitAttempts; attempt++)
         {
-            var cachedPost = JsonSerializer.Deserialize<PostResponse>(cached);
+            // 1. Thử đọc từ Redis Cache (Cache HIT)
+            var cachedPost = await ReadCachedPostAsync(cacheKey, viewsKey);
             if (cachedPost != null)
             {
-                await OverrideRealtimeViewsAsync(cachedPost, viewsKey);
                 MarkCacheResult(hit: true);
                 return Ok(cachedPost);
             }
-        }
 
-        // 2. Cache MISS — Chiếm lock phân tán chống Cache Stampede (5 giây)
-        var lockKey = $"lock:{cacheKey}";
-        var lockToken = Guid.NewGuid().ToString("N");
-        var acquired = await _cacheService.AcquireLockAsync(lockKey, lockToken, TimeSpan.FromSeconds(5));
+            // 2. Cache MISS — Chiếm lock phân tán chống Cache Stampede (5 giây)
+            bool acquired;
+            try
+            {
+                acquired = await _cacheService.AcquireLockAsync(lockKey, lockToken, LockTtl);
+            }
+            catch (Exception ex) when (RedisAvailability.IsOutage(ex))
+            {
+                break; // Redis sập: không có cache để chờ, đọc thẳng MongoDB.
+            }
 
-        if (!acquired)
-        {
+            if (acquired)
+                return await LoadAndCacheAsync(id, cacheKey, viewsKey, lockKey, lockToken);
+
             // Có luồng khác đang nạp cache, chờ 50ms rồi thử đọc lại
-            await Task.Delay(50);
-            return await GetById(id);
+            await Task.Delay(LockWaitDelay);
         }
 
+        // Hết lượt chờ (lock kẹt) hoặc Redis sập: đọc thẳng MongoDB và KHÔNG ghi cache —
+        // request đang giữ lock (nếu còn sống) sẽ ghi, tránh nhiều request cùng ghi đè nhau.
+        var fallback = await FindPostAsync(id, viewsKey);
+        if (fallback == null)
+            return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
+
+        MarkCacheResult(hit: false);
+        return Ok(fallback);
+    }
+
+    private async Task<IActionResult> LoadAndCacheAsync(string id, string cacheKey, string viewsKey, string lockKey, string lockToken)
+    {
         try
         {
             // 3. Double-check cache sau khi có lock
-            cached = await _cacheService.GetAsync(cacheKey);
-            if (!string.IsNullOrEmpty(cached))
+            var cachedPost = await ReadCachedPostAsync(cacheKey, viewsKey);
+            if (cachedPost != null)
             {
-                var cachedPost = JsonSerializer.Deserialize<PostResponse>(cached);
-                if (cachedPost != null)
-                {
-                    await OverrideRealtimeViewsAsync(cachedPost, viewsKey);
-                    MarkCacheResult(hit: true);
-                    return Ok(cachedPost);
-                }
+                MarkCacheResult(hit: true);
+                return Ok(cachedPost);
             }
 
             // 4. Đọc dữ liệu từ MongoDB
-            var filter = NotDeleted & Builders<Post>.Filter.Eq(p => p.Id, id);
-            var post = await _mongo.Posts.Find(filter).FirstOrDefaultAsync();
-            if (post == null)
+            var response = await FindPostAsync(id, viewsKey);
+            if (response == null)
                 return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
-
-            var response = PostResponse.FromModel(post);
-            await OverrideRealtimeViewsAsync(response, viewsKey);
 
             // 5. Ghi cache với TTL 10 phút
             await _cacheService.SetAsync(cacheKey, JsonSerializer.Serialize(response), CacheTtl);
@@ -222,6 +236,30 @@ public class PostsController : ControllerBase
             // 6. Giải phóng lock an toàn
             await _cacheService.ReleaseLockAsync(lockKey, lockToken);
         }
+    }
+
+    private async Task<PostResponse?> ReadCachedPostAsync(string cacheKey, string viewsKey)
+    {
+        var cached = await _cacheService.GetAsync(cacheKey);
+        if (string.IsNullOrEmpty(cached))
+            return null;
+
+        var cachedPost = JsonSerializer.Deserialize<PostResponse>(cached);
+        if (cachedPost != null)
+            await OverrideRealtimeViewsAsync(cachedPost, viewsKey);
+        return cachedPost;
+    }
+
+    private async Task<PostResponse?> FindPostAsync(string id, string viewsKey)
+    {
+        var filter = NotDeleted & Builders<Post>.Filter.Eq(p => p.Id, id);
+        var post = await _mongo.Posts.Find(filter).FirstOrDefaultAsync();
+        if (post == null)
+            return null;
+
+        var response = PostResponse.FromModel(post);
+        await OverrideRealtimeViewsAsync(response, viewsKey);
+        return response;
     }
 
     /// <summary>
