@@ -1,7 +1,7 @@
 ---
 title: "Kế hoạch SV3: Benchmark, biểu đồ và chương kiểm thử hiệu năng (SCRUM-40/41/42)"
 description: "Đo thật thời gian đọc bài viết Không cache / Cache MISS / Cache HIT, vẽ biểu đồ và viết chương kiểm thử hiệu năng để lấp phần 4 barem (2.5đ) đang 🔴."
-status: in-progress
+status: completed
 priority: P1
 effort: "7.5h"
 branch: SCRUM-40-benchmark-apache-bench-k6-lan-1-vs-lan-2
@@ -85,7 +85,7 @@ Bốn kịch bản đo:
 |---|---|---|---|---|---|
 | [01](phase-01-scrum-40-benchmark-script.md) | SCRUM-40 | Script benchmark + test + 1 lần chạy chính thức | 3.5h | — | completed |
 | [02](phase-02-scrum-41-bieu-do-bang-so-lieu.md) | SCRUM-41 | `plot.py`: biểu đồ + bảng số liệu | 1.5h | 01 | completed |
-| [03](phase-03-scrum-42-chuong-kiem-thu-hieu-nang.md) | SCRUM-42 | Chương báo cáo kiểm thử hiệu năng + bàn giao | 2.5h | 01, 02 | pending |
+| [03](phase-03-scrum-42-chuong-kiem-thu-hieu-nang.md) | SCRUM-42 | Chương báo cáo kiểm thử hiệu năng + bàn giao | 2.5h | 01, 02 | completed |
 
 **Git:** tách nhánh từ `main` mới nhất. Mỗi ticket một nhánh, nhánh sau tách từ nhánh trước:
 `SCRUM-40-…` → `SCRUM-41-…` → `SCRUM-42-…`. Commit tiếng Việt, ví dụ

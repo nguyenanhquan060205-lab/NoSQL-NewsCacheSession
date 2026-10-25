@@ -2,7 +2,7 @@
 phase: 3
 ticket: SCRUM-42
 title: "Chương kiểm thử hiệu năng + bàn giao số liệu cho nhóm"
-status: pending
+status: completed
 priority: P1
 effort: "2.5h"
 dependsOn: [1, 2]
@@ -47,9 +47,12 @@ Không làm tròn quá 2 chữ số thập phân, không chọn lọc lượt đ
 3. [ ] Tự đối chiếu: so từng con số trong chương với `summary.json`.
 4. [ ] Commit `docs(SCRUM-42): chương kiểm thử hiệu năng`.
 5. [ ] **Bàn giao (nhắn tin, không sửa file người khác):**
-   - Quân (SV2): điền mục 5 "Kết luận & kết quả thực nghiệm" bằng số từ chương này (gửi link).
+   - Quân (SV2): mục 5 báo cáo đang ghi "Lần 1 (MISS) ~80ms - 200ms" — số đo thật là 8,57 ms
+     (trung vị). Nhờ Quân sửa bằng số từ chương này (gửi link).
    - Như (SV1): cập nhật `nosql-jira-tasks.csv` (SCRUM-39/40/41/42 → Done) và Phần 4 của
      `checklist-barem.md`. Gợi ý cập nhật bảng B4 trong `kich-ban-demo-va-do-hieu-nang.md`.
+     Thêm: `bao-cao-tien-do.md` dòng 289–290 và `ra-soat-cai-dat-tu-dau.md` dòng 227 (tick việc SV3).
+   - Cả nhóm: mục 11.5 `huong_dan_nhom.md` (file chung) còn script benchmark mẫu cũ.
 6. [ ] Hỏi user trước khi `git push` / mở PR.
 
 ## Tiêu chí đạt
