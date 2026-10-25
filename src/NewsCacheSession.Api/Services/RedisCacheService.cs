@@ -39,6 +39,11 @@ public class RedisCacheService : ICacheService
         return await _db.StringIncrementAsync(key);
     }
 
+    public async Task<bool> SetIfNotExistsAsync(string key, string value)
+    {
+        return await _db.StringSetAsync(key, value, when: When.NotExists);
+    }
+
     public async Task<bool> AcquireLockAsync(string key, string value, TimeSpan expiry)
     {
         return await _db.LockTakeAsync(key, value, expiry);

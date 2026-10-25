@@ -2,6 +2,7 @@ using System.Text.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using NewsCacheSession.Api.Controllers;
 using NewsCacheSession.Api.DTOs.Posts;
@@ -21,6 +22,11 @@ public class PostsControllerCacheAsideTests
         _mockCurrentUser = new Mock<ICurrentUserService>();
     }
 
+    // MongoContext để null: các test này chỉ đi nhánh Redis, không chạm MongoDB hay kho ảnh.
+    private PostsController CreateController() =>
+        new(null!, _mockCache.Object, _mockCurrentUser.Object,
+            Mock.Of<IImageStorageService>(), NullLogger<PostsController>.Instance);
+
     [Fact]
     public async Task GetById_WhenCacheHit_ShouldReturnFromCacheWithHitHeaderAndNotQueryMongo()
     {
@@ -39,7 +45,7 @@ public class PostsControllerCacheAsideTests
         _mockCache.Setup(c => c.GetAsync($"post:{postId}:views"))
             .ReturnsAsync("25"); // Overridden views
 
-        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        var controller = CreateController();
         var httpContext = new DefaultHttpContext();
         controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
@@ -64,7 +70,7 @@ public class PostsControllerCacheAsideTests
     public async Task GetById_WithInvalidObjectId_ShouldReturnBadRequest()
     {
         // Arrange
-        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        var controller = CreateController();
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
 
         // Act
@@ -94,7 +100,7 @@ public class PostsControllerCacheAsideTests
         _mockCache.Setup(c => c.GetAsync("posts:cat:all:p1:v1"))
             .ReturnsAsync(JsonSerializer.Serialize(pagedResponse));
 
-        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        var controller = CreateController();
         var httpContext = new DefaultHttpContext();
         controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
@@ -121,7 +127,7 @@ public class PostsControllerCacheAsideTests
         _mockCache.Setup(c => c.GetAsync("posts:cat:all:p1:v0"))
             .ReturnsAsync(JsonSerializer.Serialize(pagedResponse));
 
-        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        var controller = CreateController();
         var httpContext = new DefaultHttpContext();
         controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
@@ -144,7 +150,7 @@ public class PostsControllerCacheAsideTests
             .ReturnsAsync(JsonSerializer.Serialize(cachedPage));
 
         // MongoContext null: lệch pageSize phải rơi xuống nhánh đọc MongoDB chứ không trả bản cache
-        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        var controller = CreateController();
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
 
         // Act
@@ -158,7 +164,7 @@ public class PostsControllerCacheAsideTests
     public async Task GetAll_WithInvalidCategoryId_ShouldReturnBadRequest()
     {
         // Arrange
-        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        var controller = CreateController();
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
 
         // Act

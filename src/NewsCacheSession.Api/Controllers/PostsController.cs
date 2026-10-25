@@ -389,13 +389,23 @@ public class PostsController : ControllerBase
 
         var viewsKey = ViewsKey(id);
 
-        // Chỉ tra MongoDB ở lượt xem đầu tiên (key đếm chưa có): ID đúng cú pháp nhưng không trỏ
-        // tới bài nào thì không được tạo key đếm — key này không TTL nên sẽ nằm trong Redis vĩnh viễn.
+        // Chỉ tra MongoDB ở lượt xem đầu tiên (key đếm chưa có), với hai mục đích:
+        //   1. ID đúng cú pháp nhưng không trỏ tới bài nào thì không được tạo key đếm — key này
+        //      không TTL nên sẽ nằm trong Redis vĩnh viễn.
+        //   2. Khởi tạo bộ đếm bằng posts.views đang có. Thiếu bước này thì INCR đếm lại từ 0
+        //      (bài có sẵn lượt xem, Redis vừa bị xóa dữ liệu...) và worker ghi đè số nhỏ đó lên
+        //      posts.views — mất toàn bộ lượt xem cũ.
         if (string.IsNullOrEmpty(await _cacheService.GetAsync(viewsKey)))
         {
-            var exists = await _mongo.Posts.Find(NotDeleted & Builders<Post>.Filter.Eq(p => p.Id, id)).AnyAsync();
-            if (!exists)
+            var post = await _mongo.Posts.Find(NotDeleted & Builders<Post>.Filter.Eq(p => p.Id, id))
+                .Project<Post>(Builders<Post>.Projection.Include(p => p.Views))
+                .FirstOrDefaultAsync();
+            if (post == null)
                 return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
+
+            // SET NX: hai lượt xem đầu tiên chen nhau thì chỉ một lượt ghi giá trị khởi tạo,
+            // INCR của cả hai vẫn được tính.
+            await _cacheService.SetIfNotExistsAsync(viewsKey, post.Views.ToString());
         }
 
         var newCount = await _cacheService.IncrementAsync(viewsKey);

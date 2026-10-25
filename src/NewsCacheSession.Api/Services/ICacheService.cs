@@ -14,6 +14,11 @@ public interface ICacheService
     Task SetAsync(string key, string value, TimeSpan ttl);
     Task RemoveAsync(string key);
     Task<long> IncrementAsync(string key);
+
+    /// <summary>
+    /// Ghi key KHÔNG TTL chỉ khi key chưa tồn tại (SET NX). Trả về false nếu key đã có giá trị.
+    /// </summary>
+    Task<bool> SetIfNotExistsAsync(string key, string value);
     Task<bool> AcquireLockAsync(string key, string value, TimeSpan expiry);
     Task<bool> ReleaseLockAsync(string key, string value);
 

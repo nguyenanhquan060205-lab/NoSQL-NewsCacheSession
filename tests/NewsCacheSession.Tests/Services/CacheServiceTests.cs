@@ -131,4 +131,20 @@ public class CacheServiceTests
         // Assert
         released.Should().BeTrue();
     }
+
+    [Fact]
+    public async Task SetIfNotExistsAsync_ShouldUseSetNxWithoutTtl()
+    {
+        // Act
+        await _service.SetIfNotExistsAsync("post:1:views", "500");
+
+        // Assert — key đếm lượt xem không được có TTL và không được ghi đè số đang đếm
+        // StackExchange.Redis 3.x chuyển When/TimeSpan thành điều kiện và hạn dùng dạng lệnh Redis
+        // ("NX", "EX 600"...), nên so theo dạng lệnh đó.
+        var call = _mockDb.Invocations.Single(i => i.Method.Name == nameof(IDatabase.StringSetAsync));
+        var args = call.Arguments.Select(a => a?.ToString() ?? string.Empty).ToList();
+        args.Should().Contain("post:1:views").And.Contain("500").And.Contain("NX");
+        args.Should().NotContain(a => a.StartsWith("EX") || a.StartsWith("PX"));
+        call.Arguments.OfType<TimeSpan>().Should().BeEmpty();
+    }
 }
