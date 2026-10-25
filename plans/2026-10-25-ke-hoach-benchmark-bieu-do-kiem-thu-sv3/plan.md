@@ -84,7 +84,7 @@ Bốn kịch bản đo:
 | Phase | Ticket | Nội dung | Effort | Phụ thuộc | Trạng thái |
 |---|---|---|---|---|---|
 | [01](phase-01-scrum-40-benchmark-script.md) | SCRUM-40 | Script benchmark + test + 1 lần chạy chính thức | 3.5h | — | completed |
-| [02](phase-02-scrum-41-bieu-do-bang-so-lieu.md) | SCRUM-41 | `plot.py`: biểu đồ + bảng số liệu | 1.5h | 01 | pending |
+| [02](phase-02-scrum-41-bieu-do-bang-so-lieu.md) | SCRUM-41 | `plot.py`: biểu đồ + bảng số liệu | 1.5h | 01 | completed |
 | [03](phase-03-scrum-42-chuong-kiem-thu-hieu-nang.md) | SCRUM-42 | Chương báo cáo kiểm thử hiệu năng + bàn giao | 2.5h | 01, 02 | pending |
 
 **Git:** tách nhánh từ `main` mới nhất. Mỗi ticket một nhánh, nhánh sau tách từ nhánh trước:

@@ -47,6 +47,15 @@ Chạy thử nhanh: `--posts 3 --rounds 2 --stampede 10 --stampede-trials 1 --lo
 
 Chỉ thư mục `*-chinh-thuc` được commit (xem `.gitignore`).
 
+## Vẽ biểu đồ (SCRUM-41)
+
+```powershell
+python scripts/Benchmark/plot.py scripts/Benchmark/results/2026-10-25-chinh-thuc
+```
+
+Chỉ đọc file kết quả, không cần API. Sinh ra `charts/01…05-*.png` (trung vị + p95, phân bố,
+theo lượt đo, tải đồng thời, stampede) và `summary.md` (bảng số liệu dán thẳng vào báo cáo).
+
 ## An toàn dữ liệu
 
 Script chỉ chạy `DEL post:{id}` cho đúng bài đang đo, không `FLUSH`, `KEYS` hay `SCAN`.

@@ -2,7 +2,7 @@
 phase: 2
 ticket: SCRUM-41
 title: "plot.py: biểu đồ so sánh thời gian tải + bảng số liệu"
-status: pending
+status: completed
 priority: P1
 effort: "1.5h"
 dependsOn: [1]
