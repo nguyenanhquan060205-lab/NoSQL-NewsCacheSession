@@ -154,6 +154,14 @@ public class PostsController : ControllerBase
     private static readonly TimeSpan LockWaitDelay = TimeSpan.FromMilliseconds(50);
     private static readonly TimeSpan LockTtl = TimeSpan.FromSeconds(5);
 
+    // Giữ nguyên chữ tiếng Việt trong JSON cache thay vì escape \uXXXX: bài dài nhất (275 018 ký tự)
+    // giảm từ 569 KB xuống ~365 KB và đọc được trực tiếp trên RedisInsight. Tên field giữ nguyên
+    // nên bản cache cũ vẫn deserialize được.
+    private static readonly JsonSerializerOptions CacheJson = new()
+    {
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
     /// <summary>
     /// Lấy chi tiết bài viết theo ID — ⭐ Cache-Aside Pattern.
     /// Bước 1: Kiểm tra Redis (cache hit?)
@@ -226,7 +234,7 @@ public class PostsController : ControllerBase
                 return NotFound(new { message = "Bài viết không tồn tại hoặc đã bị xóa." });
 
             // 5. Ghi cache với TTL 10 phút
-            await _cacheService.SetAsync(cacheKey, JsonSerializer.Serialize(response), CacheTtl);
+            await _cacheService.SetAsync(cacheKey, JsonSerializer.Serialize(response, CacheJson), CacheTtl);
 
             MarkCacheResult(hit: false);
             return Ok(response);
