@@ -31,8 +31,13 @@ public class RedisSessionService : ISessionService
             new("loginAt", now),
             new("lastActive", now)
         };
-        await _db.HashSetAsync(key, entries);
-        await _db.KeyExpireAsync(key, ttl);
+
+        // HSET + EXPIRE trong một MULTI/EXEC: gửi hai lệnh rời thì tiến trình chết giữa chừng
+        // để lại một Hash không TTL, nằm vĩnh viễn trong Redis.
+        var tran = _db.CreateTransaction();
+        _ = tran.HashSetAsync(key, entries);
+        _ = tran.KeyExpireAsync(key, ttl);
+        await tran.ExecuteAsync();
     }
 
     public Task CreateSessionAsync(string sessionId, string userId, string username, TimeSpan ttl) =>

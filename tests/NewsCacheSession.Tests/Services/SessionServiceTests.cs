@@ -22,7 +22,7 @@ public class SessionServiceTests
     }
 
     [Fact]
-    public async Task CreateSessionAsync_WithRole_ShouldStoreAllRequiredHashEntriesAndSetTtl()
+    public async Task CreateSessionAsync_WithRole_ShouldStoreAllRequiredHashEntriesAndSetTtlInOneTransaction()
     {
         // Arrange
         var sessionId = "sess-123";
@@ -30,21 +30,15 @@ public class SessionServiceTests
         var username = "testuser";
         var role = "admin";
         var ttl = TimeSpan.FromMinutes(30);
+        var key = (RedisKey)$"session:{sessionId}";
 
         HashEntry[]? savedEntries = null;
-        _mockDb.Setup(db => db.HashSetAsync(
-                It.Is<RedisKey>(k => k == $"session:{sessionId}"),
-                It.IsAny<HashEntry[]>(),
-                It.IsAny<CommandFlags>()))
+        var mockTran = new Mock<ITransaction>();
+        mockTran.Setup(t => t.HashSetAsync(key, It.IsAny<HashEntry[]>(), It.IsAny<CommandFlags>()))
             .Callback<RedisKey, HashEntry[], CommandFlags>((k, entries, f) => savedEntries = entries)
             .Returns(Task.CompletedTask);
-
-        _mockDb.Setup(db => db.KeyExpireAsync(
-                It.Is<RedisKey>(k => k == $"session:{sessionId}"),
-                It.Is<TimeSpan?>(t => t == ttl),
-                It.IsAny<ExpireWhen>(),
-                It.IsAny<CommandFlags>()))
-            .ReturnsAsync(true);
+        mockTran.Setup(t => t.ExecuteAsync(It.IsAny<CommandFlags>())).ReturnsAsync(true);
+        _mockDb.Setup(db => db.CreateTransaction(It.IsAny<object>())).Returns(mockTran.Object);
 
         // Act
         await _service.CreateSessionAsync(sessionId, userId, username, role, ttl);
@@ -59,7 +53,11 @@ public class SessionServiceTests
         dict.Should().ContainKey("loginAt").WhoseValue.Should().NotBeNullOrEmpty();
         dict.Should().ContainKey("lastActive").WhoseValue.Should().NotBeNullOrEmpty();
 
-        _mockDb.Verify(db => db.KeyExpireAsync($"session:{sessionId}", ttl, It.IsAny<ExpireWhen>(), It.IsAny<CommandFlags>()), Times.Once);
+        // HSET và EXPIRE cùng một MULTI/EXEC — không có khoảng nào Hash tồn tại mà chưa có TTL
+        mockTran.Verify(t => t.KeyExpireAsync(key, ttl, It.IsAny<ExpireWhen>(), It.IsAny<CommandFlags>()), Times.Once);
+        mockTran.Verify(t => t.ExecuteAsync(It.IsAny<CommandFlags>()), Times.Once);
+        _mockDb.Verify(db => db.HashSetAsync(It.IsAny<RedisKey>(), It.IsAny<HashEntry[]>(), It.IsAny<CommandFlags>()), Times.Never);
+        _mockDb.Verify(db => db.KeyExpireAsync(It.IsAny<RedisKey>(), It.IsAny<TimeSpan?>(), It.IsAny<ExpireWhen>(), It.IsAny<CommandFlags>()), Times.Never);
     }
 
     [Fact]
