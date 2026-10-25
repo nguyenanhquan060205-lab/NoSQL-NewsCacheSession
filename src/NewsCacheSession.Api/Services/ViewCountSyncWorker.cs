@@ -55,15 +55,35 @@ public class ViewCountSyncWorker : BackgroundService
 
         _logger.LogInformation("Đồng bộ lượt xem cho {Count} bài viết về MongoDB.", dirtyPostIds.Count);
 
-        foreach (var postId in dirtyPostIds)
+        for (var i = 0; i < dirtyPostIds.Count; i++)
         {
-            var viewsStr = await cache.GetAsync($"post:{postId}:views");
-            if (int.TryParse(viewsStr, out var views))
+            var postId = dirtyPostIds[i];
+            try
             {
-                await mongo.Posts.UpdateOneAsync(
-                    p => p.Id == postId,
-                    Builders<Post>.Update.Set(p => p.Views, views),
-                    cancellationToken: ct);
+                var viewsStr = await cache.GetAsync($"post:{postId}:views");
+                if (int.TryParse(viewsStr, out var views))
+                {
+                    await mongo.Posts.UpdateOneAsync(
+                        p => p.Id == postId,
+                        Builders<Post>.Update.Set(p => p.Views, views),
+                        cancellationToken: ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Các ID này đã bị SPOP khỏi posts:dirty_views. Chưa ghi được MongoDB mà bỏ đi thì
+                // posts.views lệch cho tới khi bài có lượt xem mới. MongoDB lỗi thì các bài sau
+                // cũng sẽ lỗi, nên trả lại cả phần còn lại để lượt flush sau thử lại.
+                var remaining = dirtyPostIds.Skip(i).ToList();
+                foreach (var id in remaining)
+                    await cache.MarkDirtyViewAsync(id);
+
+                if (ex is OperationCanceledException)
+                    throw;
+
+                _logger.LogError(ex, "Không ghi được lượt xem về MongoDB, giữ lại {Count} bài cho lượt flush sau.",
+                    remaining.Count);
+                return;
             }
         }
     }
