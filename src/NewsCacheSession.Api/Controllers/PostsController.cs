@@ -129,7 +129,7 @@ public class PostsController : ControllerBase
         };
 
         // 4. Ghi ngược vào Redis kèm TTL 3 phút
-        await _cacheService.SetAsync(cacheKey, JsonSerializer.Serialize(response), ListCacheTtl);
+        await _cacheService.SetAsync(cacheKey, JsonSerializer.Serialize(response, CacheJson), ListCacheTtl);
         MarkCacheResult(hit: false);
 
         return Ok(response);
