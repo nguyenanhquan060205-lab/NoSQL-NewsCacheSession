@@ -18,9 +18,7 @@ public class AuthController : ControllerBase
     private readonly ISessionQueryService _sessionQueryService;
     private readonly ICurrentUserService _currentUser;
     private readonly IConnectionMultiplexer _redis;
-
-    // TTL của session — xem bảng keyspace trong docs/redis-keyspace.md
-    private static readonly TimeSpan SessionTtl = TimeSpan.FromMinutes(30);
+    private readonly IConfiguration _config;
 
     private const int MaxSessionsReturned = 200;
 
@@ -29,13 +27,15 @@ public class AuthController : ControllerBase
         ISessionService sessionService,
         ISessionQueryService sessionQueryService,
         ICurrentUserService currentUser,
-        IConnectionMultiplexer redis)
+        IConnectionMultiplexer redis,
+        IConfiguration config)
     {
         _mongo = mongo;
         _sessionService = sessionService;
         _sessionQueryService = sessionQueryService;
         _currentUser = currentUser;
         _redis = redis;
+        _config = config;
     }
 
     /// <summary>
@@ -132,23 +132,22 @@ public class AuthController : ControllerBase
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Unauthorized(new { message = "Sai username hoặc password" });
 
-        // 3-4. Tạo session trên Redis: HSET session:{id} ... + EXPIRE 30 phút
+        // 3-4. Tạo session trên Redis trong MỘT MULTI/EXEC: HSET đủ 5 field (kể cả role để
+        //      middleware và trang quản trị khỏi query MongoDB) + EXPIRE theo SessionSettings:TtlMinutes.
+        //      Không ghi role bằng lệnh thứ hai: giữa hai lệnh, admin sẽ có một khoảng role=user.
+        var sessionTtl = SessionTtl.From(_config);
         var sessionId = Guid.NewGuid().ToString();
-        await _sessionService.CreateSessionAsync(sessionId, user.Id, user.Username, SessionTtl);
+        await _sessionService.CreateSessionAsync(sessionId, user.Id, user.Username, user.Role, sessionTtl);
 
-        // 5. Bổ sung role + lastActive vào Hash session. CreateSessionAsync (file của SV2) chưa
-        //    nhận role, nên ghi thêm ở đây để middleware và trang quản trị đọc được ngay,
-        //    khỏi phải query MongoDB mỗi request. HSET không làm mất TTL đã đặt ở bước trên.
-        await _currentUser.TouchAsync(sessionId, user.Role);
-
-        // 6. Set Cookie "SessionId" — HttpOnly để JavaScript không đọc được (chống XSS
-        //    đánh cắp phiên); Secure bật theo scheme thật của request.
+        // 5. Set Cookie "SessionId" — HttpOnly để JavaScript không đọc được (chống XSS
+        //    đánh cắp phiên); Secure bật theo scheme thật của request. Max-Age bằng TTL phiên,
+        //    middleware cấp lại cookie mỗi lần gia hạn.
         Response.Cookies.Append(CurrentUserService.SessionCookieName, sessionId, new CookieOptions
         {
             HttpOnly = true,
             SameSite = SameSiteMode.Lax,
             Secure = Request.IsHttps,
-            MaxAge = SessionTtl
+            MaxAge = sessionTtl
         });
 
         return Ok(new LoginResponse

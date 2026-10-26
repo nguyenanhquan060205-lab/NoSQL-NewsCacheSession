@@ -58,8 +58,7 @@ public class SessionAuthMiddleware
         // Sliding Expiration: gia hạn TTL theo cấu hình và cập nhật lastActive.
         // Phải ghi lastActive ở đây: Items đã đủ bộ nên CurrentUserService đi đường tắt,
         // không gọi TouchAsync nữa — trang quản trị phiên sẽ mãi hiện giờ đăng nhập.
-        var ttlMinutes = config.GetValue<int>("SessionSettings:TtlMinutes", 30);
-        var ttl = TimeSpan.FromMinutes(ttlMinutes > 0 ? ttlMinutes : 30);
+        var ttl = SessionTtl.From(config);
         await sessionService.RefreshSessionAsync(sessionId, ttl);
 
         // Cookie cũng phải trượt theo TTL trên Redis: cookie chỉ đặt Max-Age lúc đăng nhập thì
