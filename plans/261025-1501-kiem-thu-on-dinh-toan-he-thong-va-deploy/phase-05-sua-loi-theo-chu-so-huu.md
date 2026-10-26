@@ -109,4 +109,4 @@ Cuối phase: diễn tập lại 3 bước demo một lượt trên stack demo (
 - [x] Các mục của Như/Định đã được đồng ý
 - [x] Chạy lại kịch bản dừng container của Phase 4
 - [x] Ghi `reports/05-ban-sua-va-bao-cao-loi.md`
-- [ ] Hỏi rồi push `develop`, mở PR `develop → main`, merge
+- [x] Hỏi rồi push `develop`, mở PR `develop → main`, merge
