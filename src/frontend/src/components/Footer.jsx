@@ -86,7 +86,7 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col gap-2 py-5 text-xs leading-5 text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} NewsCache. Bảo lưu nội dung thuộc phạm vi đồ án.</p>
+          <p>© {new Date().getFullYear()} NewsCache · Bài viết lấy từ Wikipedia/Wikinews theo giấy phép CC BY-SA / CC BY, nguồn và tác giả ghi cuối mỗi bài.</p>
           <p className="font-semibold text-zinc-400">Sản phẩm học tập · Không phải cơ quan báo chí</p>
         </div>
       </div>

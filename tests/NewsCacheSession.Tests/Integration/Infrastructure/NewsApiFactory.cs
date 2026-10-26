@@ -187,6 +187,21 @@ public class NewsApiFactory : WebApplicationFactory<HealthController>
         return (client, sessionId, userId);
     }
 
+    /// <summary>
+    /// Đăng ký rồi đăng nhập trên một app bất kỳ (vd. factory phụ tạo bằng WithWebHostBuilder,
+    /// dùng chung DB với factory chính).
+    /// </summary>
+    public static async Task<(HttpClient Client, string SessionId, string UserId)> SignInOnAsync(
+        WebApplicationFactory<HealthController> app, string username)
+    {
+        var client = app.CreateClient();
+        var password = NewPassword();
+        var register = await RegisterAsync(client, username, password);
+        var userId = (await ReadJsonAsync(register)).GetProperty("id").GetString()!;
+        var sessionId = await LoginAsync(client, username, password);
+        return (client, sessionId, userId);
+    }
+
     public static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<JsonElement>(Json);
 

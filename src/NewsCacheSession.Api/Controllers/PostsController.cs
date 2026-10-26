@@ -294,11 +294,14 @@ public class PostsController : ControllerBase
     /// Tạo bài viết mới (lưu MongoDB). Yêu cầu đăng nhập.
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreatePostRequest request)
+    public async Task<IActionResult> Create([FromBody] CreatePostRequest request, [FromServices] IConfiguration config)
     {
         var current = await _currentUser.GetAsync(HttpContext);
         if (current == null)
             return Unauthorized(new { message = "Bạn cần đăng nhập để tạo bài viết." });
+
+        if (!PostingPolicy.Allows(current, config))
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = PostingPolicy.AdminOnlyMessage });
 
         if (!await IsValidCategoryAsync(request.CategoryId))
             return BadRequest(new { message = "Chuyên mục không hợp lệ hoặc không tồn tại." });

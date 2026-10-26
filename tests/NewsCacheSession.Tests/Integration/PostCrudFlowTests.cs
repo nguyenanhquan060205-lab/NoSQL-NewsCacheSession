@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using NewsCacheSession.Api.Models;
@@ -90,6 +91,37 @@ public class PostCrudFlowTests : IAsyncLifetime
         var created = await _factory.Posts.Find(p => p.Title == "Tin chen nhau").ToListAsync();
         created.Should().HaveCount(codes.Count(c => c == 201));
         created.Select(p => p.Slug).Should().OnlyHaveUniqueItems();
+    }
+
+    [IntegrationFact]
+    public async Task CreateAndUpload_WhenPostingIsAdminOnly_RegularUser403_AdminAllowed()
+    {
+        // Bản deploy công khai đặt PostingSettings:AdminOnly=true để người lạ không đăng được link lừa đảo.
+        await using var app = _factory.WithWebHostBuilder(b => b.ConfigureAppConfiguration((_, config) =>
+            config.AddInMemoryCollection(new Dictionary<string, string?> { ["PostingSettings:AdminOnly"] = "true" })));
+        var (admin, _, _) = await NewsApiFactory.SignInOnAsync(app, "admin_dau_tien");
+        var (user, _, _) = await NewsApiFactory.SignInOnAsync(app, "nguoi_la");
+
+        var userPost = await user.PostAsJsonAsync("/api/posts", NewPost("Bài của người lạ"));
+        var userUpload = await user.PostAsync("/api/images", ImageForm());
+        var adminPost = await admin.PostAsJsonAsync("/api/posts", NewPost("Bài của admin"));
+        var adminUpload = await admin.PostAsync("/api/images", ImageForm());
+
+        userPost.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await NewsApiFactory.ReadJsonAsync(userPost)).GetProperty("message").GetString().Should().Contain("quản trị viên");
+        userUpload.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        adminPost.StatusCode.Should().Be(HttpStatusCode.Created);
+        adminUpload.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable, "qua được cổng phân quyền, chỉ vướng Cloudinary chưa cấu hình");
+        (await _factory.Posts.CountDocumentsAsync(p => p.Title == "Bài của người lạ")).Should().Be(0);
+    }
+
+    private static MultipartFormDataContent ImageForm()
+    {
+        var png = Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
+        var file = new ByteArrayContent(png);
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+        return new MultipartFormDataContent { { file, "file", "a.png" } };
     }
 
     [IntegrationFact]
