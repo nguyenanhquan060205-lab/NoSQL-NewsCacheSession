@@ -159,7 +159,7 @@ public class CacheServiceTests
     }
 
     [Fact]
-    public async Task ReleaseLockAsync_WithMatchingToken_ShouldExecuteLuaScriptAndReturnTrue()
+    public async Task ReleaseLockAsync_WithMatchingToken_ShouldReleaseThroughTokenCheckedLockRelease()
     {
         // Arrange
         _mockDb.Setup(db => db.LockReleaseAsync(
