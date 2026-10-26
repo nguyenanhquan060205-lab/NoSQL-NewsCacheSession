@@ -1,7 +1,7 @@
 ---
 title: "Kiểm thử ổn định toàn hệ thống (flow SV1–SV2–SV3) và deploy miễn phí"
 description: "Chứng minh bằng test thật (Redis + MongoDB thật) rằng toàn bộ flow của Như, Quân, Định chạy ổn định, sửa lỗi đã chứng minh, rồi deploy Render + Atlas + Redis Cloud + Vercel."
-status: in-progress
+status: completed
 priority: P1
 effort: 24.5h
 branch: develop

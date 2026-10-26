@@ -117,8 +117,8 @@ Cần Phase 5 xong và `main` đã merge (deploy từ `main`, Render tự deploy
 ## Todo
 - [x] `scripts/Smoke/smoke_test.py` xanh trên API QA
 - [x] `Dockerfile` + `.dockerignore` (xin phép), smoke xanh trên container local
-- [ ] Atlas M0 + chép `posts`, `categories`
-- [ ] Redis Cloud free + chính sách eviction
-- [ ] Render Docker + biến môi trường, đăng ký admin ngay
-- [ ] Vercel + `vercel.json` (xin phép Định), smoke qua Vercel
-- [ ] Đo cold start, viết `docs/huong-dan-deploy.md`
+- [x] Atlas M0 + chép `posts`, `categories`
+- [x] Redis Cloud free + chính sách eviction
+- [x] Render Docker + biến môi trường, đăng ký admin ngay
+- [x] Vercel + `vercel.json` (xin phép Định), smoke qua Vercel
+- [x] Đo cold start, viết `docs/huong-dan-deploy.md`

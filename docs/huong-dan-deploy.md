@@ -29,6 +29,18 @@ Dung lượng Redis: bài dài nhất chiếm ~393 KB/key, trung bình ~15 KB. T
 khoảng 2 000 bài khác nhau — đủ cho bản demo. Đặt eviction `volatile-lru` để Redis chỉ đẩy key **có TTL**
 khi đầy; các key không TTL (`post:{id}:views`, `posts:ver`, `posts:dirty_views`) không bao giờ bị đẩy ra.
 
+## Bản đang chạy (26/10/2026)
+
+| | URL |
+|---|---|
+| Web (Vercel) | <https://no-sql-news-cache-session.vercel.app> |
+| API (Render, Docker) | <https://newscachesession-api.onrender.com> — `/health` báo Healthy cho MongoDB Atlas và Redis Cloud |
+
+Đã kiểm tra trên bản thật: smoke test qua Vercel 9/9 (đăng nhập, MISS → HIT, sửa bài xóa cache, lượt xem,
+F5 trang con, xóa, đăng xuất); `/api` qua Vercel luôn `x-vercel-cache: MISS`; header + thẻ meta `noindex`;
+cookie `SessionId` có `secure; samesite=lax; httponly`; tài khoản thường tạo bài nhận 403 (`AdminOnly`).
+Dữ liệu: 10 000 bài Wikipedia/Wikinews + 7 chuyên mục. Tài khoản do Quân quản lý — không ghi ở đây.
+
 ## 0. Điều kiện trước khi deploy
 
 - PR `develop → main` đã merge — Render deploy từ nhánh `main` và tự deploy lại mỗi khi `main` có commit mới.
@@ -182,9 +194,9 @@ Sau đó mở trình duyệt: badge HIT/MISS ở trang chi tiết, đăng nhập
 curl -s -o /dev/null -w 'cold start: %{time_total}s\n' https://newscachesession-api.onrender.com/health
 ```
 
-| Ngày | Thời gian thức dậy |
-|---|---|
-| _(điền sau khi đo)_ | |
+| Ngày | Thời gian thức dậy | Gọi lại ngay sau đó |
+|---|---|---|
+| 26/10/2026 (sau 17 phút không có request) | **33,6 s** | 0,22 s |
 
 ## Bản quyền, Google và cờ "trang không an toàn"
 
