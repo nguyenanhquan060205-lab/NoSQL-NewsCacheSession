@@ -121,6 +121,22 @@ public class AuthFlowTests : IAsyncLifetime
     }
 
     [IntegrationFact]
+    public async Task Register_SameUsernameRacingOnEmptyDb_ShouldStillLeaveAdminSlotForNextUser()
+    {
+        var client = _factory.CreateClient();
+
+        // Hai request cùng username: chỉ một tài khoản được tạo; nếu bên giành được quyền admin lại
+        // thua ở bước insert thì quyền phải được trả lại cho người đăng ký kế tiếp.
+        var racing = await Task.WhenAll(Enumerable.Range(0, 2)
+            .Select(_ => NewsApiFactory.RegisterAsync(client, "trung_ten_luc_dau", NewsApiFactory.NewPassword())));
+        var next = await NewsApiFactory.RegisterAsync(client, "nguoi_ke_tiep", NewsApiFactory.NewPassword());
+
+        racing.Count(r => r.StatusCode == HttpStatusCode.Created).Should().Be(1);
+        next.StatusCode.Should().Be(HttpStatusCode.Created);
+        (await _factory.Users.CountDocumentsAsync(u => u.Role == UserRoles.Admin)).Should().Be(1);
+    }
+
+    [IntegrationFact]
     public async Task Register_OverlongUsernameOrPassword_ShouldReturn400()
     {
         var client = _factory.CreateClient();

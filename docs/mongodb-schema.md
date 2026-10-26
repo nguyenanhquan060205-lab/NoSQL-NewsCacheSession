@@ -34,7 +34,7 @@ PascalCase). Lý do:
 chèn tay vào DB, cũng không để lọ mật khẩu admin trong file cấu hình (vịn của cách
 seed sẵn tài khoản admin/admin123).
 
-"Đầu tiên" được chốt **nguyên tử**: request đăng ký thấy `users` rỗng phải insert thêm document
+"Đầu tiên" được chốt **nguyên tử**: request đăng ký thấy chưa có admin nào phải insert thêm document
 `{ "_id": "bootstrapAdmin", "username": ..., "claimedAt": ... }` vào collection `meta`. `_id` cố định
 nên chỉ đúng một request insert được; các request chen vào cùng lúc nhận lỗi trùng khóa và thành
 user thường. (Cách cũ — đếm `users` rồi insert — cho 10/10 request song song cùng thành admin.)

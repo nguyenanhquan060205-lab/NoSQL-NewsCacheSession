@@ -57,10 +57,12 @@ public class AuthController : ControllerBase
 
         // 2. Người đăng ký đầu tiên làm admin — hệ thống luôn có ít nhất một người quản trị
         //    mà không cần chèn tay vào DB hay để lộ mật khẩu admin trong file cấu hình.
-        //    "Chưa có user" rồi mới insert là hai bước: các request chen nhau đều thấy collection
+        //    "Chưa có ai" rồi mới insert là hai bước: các request chen nhau đều thấy collection
         //    rỗng và cùng thành admin (đo được 10/10). Quyền admin vì vậy phải giành bằng MỘT lệnh
-        //    nguyên tử — xem TryClaimBootstrapAdminAsync.
-        var isFirstUser = !await _mongo.Users.Find(FilterDefinition<User>.Empty).AnyAsync()
+        //    nguyên tử — xem TryClaimBootstrapAdminAsync. Điều kiện là "chưa có admin" chứ không phải
+        //    "chưa có user": người giành được mà tạo tài khoản thất bại sẽ trả lại quyền, khi đó
+        //    collection đã có user khác nhưng vẫn phải có người kế tiếp nhận được quyền admin.
+        var isFirstUser = !await _mongo.Users.Find(u => u.Role == UserRoles.Admin).AnyAsync()
                           && await TryClaimBootstrapAdminAsync(username);
 
         var user = new User
