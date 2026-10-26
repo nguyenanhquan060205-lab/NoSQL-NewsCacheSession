@@ -65,9 +65,23 @@ vitest / oxlint / build       103/103 · exit 0 · OK
 ```
 Diễn tập lại trên stack demo chạy `develop` mới nhất: 2 lượt × 3 bước đều đạt (`03-e2e-va-dien-tap.md`).
 
-Chưa làm trong phạm vi được duyệt: `CLAUDE.md` ở gốc repo và `src/NewsCacheSession.Api/CLAUDE.md` vẫn ghi lock
-là `SET … 1 NX PX 5000` và chưa có `posts:dirty_views` — hai file hướng dẫn agent này không nằm trong danh sách
-N6; báo nhóm để ai sở hữu sửa.
+## Vòng sửa thêm trước deploy (26/10, Quân xác nhận nhóm đã đồng ý mọi file)
+
+| Lỗi | Commit | Bằng chứng |
+|---|---|---|
+| Admin đầu tiên: giành quyền rồi thua insert → không ai làm admin được (tìm ra khi tự review) | `ba7d6df` | `AuthFlowTests.Register_SameUsernameRacingOnEmptyDb_…`: điều kiện cũ đỏ 4/10 lần, mới 0/10 |
+| Cookie `SessionId` thiếu cờ `Secure` sau proxy HTTPS (Render) | `7f53ba3` | `AuthFlowTests.Login_BehindHttpsProxy_…` ✅; qua container: `Set-Cookie: …; secure; samesite=lax; httponly` |
+| MongoDB sập → request treo 30 s | `10e5589` | `AppSettingsTests` ✅; Mongo chết: **500 sau 5,05 s** |
+| `src/frontend/vercel.json` | `a509564` | JSON hợp lệ; URL Render chốt `https://newscachesession-api.onrender.com` |
+| `CLAUDE.md`, `GEMINI.md`, `src/NewsCacheSession.Api/CLAUDE.md` lệch keyspace / lock | `858d0e4` | — |
+| `plot.py --help` văng `FileNotFoundError` | `aadfee1` | `test_plot.py` 16/16 ✅ |
+
+Cổng hồi quy sau commit cuối:
+```
+dotnet build (API) 0/0 · dotnet test 32 pass, 45 skipped · NEWS_IT=1 dotnet test 77/77
+vitest 103/103 · oxlint exit 0 · build OK · pytest SeedPosts 17 / SeedRedis 33 / Benchmark 16
+docker build + smoke trên container 8/8
+```
 
 ## Tin nhắn gửi nhóm
 
