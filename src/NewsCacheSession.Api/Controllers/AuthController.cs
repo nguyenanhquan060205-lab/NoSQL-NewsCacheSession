@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using NewsCacheSession.Api.Data;
 using NewsCacheSession.Api.DTOs.Auth;
@@ -56,7 +57,11 @@ public class AuthController : ControllerBase
 
         // 2. Người đăng ký đầu tiên làm admin — hệ thống luôn có ít nhất một người quản trị
         //    mà không cần chèn tay vào DB hay để lộ mật khẩu admin trong file cấu hình.
-        var isFirstUser = !await _mongo.Users.Find(FilterDefinition<User>.Empty).AnyAsync();
+        //    "Chưa có user" rồi mới insert là hai bước: các request chen nhau đều thấy collection
+        //    rỗng và cùng thành admin (đo được 10/10). Quyền admin vì vậy phải giành bằng MỘT lệnh
+        //    nguyên tử — xem TryClaimBootstrapAdminAsync.
+        var isFirstUser = !await _mongo.Users.Find(FilterDefinition<User>.Empty).AnyAsync()
+                          && await TryClaimBootstrapAdminAsync(username);
 
         var user = new User
         {
@@ -73,11 +78,44 @@ public class AuthController : ControllerBase
         catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
         {
             // Hai request đăng ký cùng username chen nhau: unique index chặn ở tầng DB.
+            if (isFirstUser)
+                await ReleaseBootstrapAdminAsync();
             return Conflict(new { message = "Username đã tồn tại" });
         }
 
         return StatusCode(StatusCodes.Status201Created, new { user.Id, user.Username, user.Role });
     }
+
+    // Collection "meta" lấy qua MongoContext.Database để không phải sửa MongoContext.cs (file dùng chung).
+    private IMongoCollection<BsonDocument> Meta => _mongo.Database.GetCollection<BsonDocument>("meta");
+    private const string BootstrapAdminId = "bootstrapAdmin";
+
+    /// <summary>
+    /// Giành quyền admin đầu tiên bằng một lệnh insert document có <c>_id</c> cố định: chỉ đúng một
+    /// request insert được, các request chen vào nhận DuplicateKey trên <c>_id</c> và làm user thường.
+    /// Reset dữ liệu (drop <c>users</c>) thì phải drop cả <c>meta</c>, nếu không sẽ không ai thành admin.
+    /// </summary>
+    private async Task<bool> TryClaimBootstrapAdminAsync(string username)
+    {
+        try
+        {
+            await Meta.InsertOneAsync(new BsonDocument
+            {
+                { "_id", BootstrapAdminId },
+                { "username", username },
+                { "claimedAt", DateTime.UtcNow }
+            });
+            return true;
+        }
+        catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Trả lại quyền admin đầu tiên khi tạo tài khoản thất bại sau khi đã giành được.</summary>
+    private Task ReleaseBootstrapAdminAsync() =>
+        Meta.DeleteOneAsync(new BsonDocument("_id", BootstrapAdminId));
 
     /// <summary>
     /// Đăng nhập — xác thực credentials rồi tạo Session trên Redis (Hashes + TTL).
