@@ -12,3 +12,6 @@ docs
 plans
 *.md
 docker-compose.yml
+.env
+.env.*
+*.env

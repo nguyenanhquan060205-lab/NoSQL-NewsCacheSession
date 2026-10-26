@@ -16,8 +16,11 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app .
 
-# Image aspnet:8.0 mặc định nghe 8080 và có sẵn user không phải root tên "app".
-ENV ASPNETCORE_HTTP_PORTS=8080
+# Nghe ở 0.0.0.0 (IPv4). Mặc định của image aspnet:8.0 là [::]:8080 — chỉ mở socket IPv6, Render
+# không dò thấy cổng nên deploy treo 15 phút rồi "Timed Out". Bỏ HTTP_PORTS để Kestrel khỏi cảnh báo ghi đè.
+ENV ASPNETCORE_HTTP_PORTS= \
+    ASPNETCORE_URLS=http://0.0.0.0:8080
 EXPOSE 8080
+# Image có sẵn user không phải root tên "app".
 USER app
 ENTRYPOINT ["dotnet", "NewsCacheSession.Api.dll"]
