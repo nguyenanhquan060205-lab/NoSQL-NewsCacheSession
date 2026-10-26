@@ -45,11 +45,13 @@ khi đầy; các key không TTL (`post:{id}:views`, `posts:ver`, `posts:dirty_vi
    khi Atlas chập chờn (giống chuỗi mặc định trong `appsettings.json`):
    `mongodb+srv://<user>:<pass>@<cluster>/?retryWrites=true&w=majority&serverSelectionTimeoutMS=5000`
 5. Chép dữ liệu — **chỉ** `posts` và `categories`, **không** chép `users` (khỏi mang tài khoản demo và
-   hash mật khẩu lên mạng). Chạy ở gốc repo khi stack local đang bật:
+   hash mật khẩu lên mạng), và **bỏ 150 bài tóm tắt RSS VnExpress** (văn bản và ảnh của báo có bản quyền,
+   ảnh còn tải thẳng từ CDN của VnExpress — chỉ để chạy demo trên máy). Chạy ở gốc repo khi stack local đang bật:
 
    ```bash
    mkdir -p atlas-dump
-   docker exec news-mongo mongodump --quiet --db newsdb --collection posts --gzip --archive=/tmp/posts.gz
+   docker exec news-mongo mongodump --quiet --db newsdb --collection posts \
+     --query '{"slug":{"$not":{"$regex":"^real-vnexpress"}}}' --gzip --archive=/tmp/posts.gz
    docker exec news-mongo mongodump --quiet --db newsdb --collection categories --gzip --archive=/tmp/categories.gz
    docker cp news-mongo:/tmp/posts.gz atlas-dump/ && docker cp news-mongo:/tmp/categories.gz atlas-dump/
 
@@ -59,8 +61,9 @@ khi đầy; các key không TTL (`post:{id}:views`, `posts:ver`, `posts:dirty_vi
    rm -rf atlas-dump
    ```
 
-   Kỳ vọng (đã thử cùng lệnh vào một Mongo khác): `10251 document(s) restored`, `7 document(s) restored`,
-   index `ux_posts_slug`, `ix_posts_category_createdAt`, `ix_posts_createdAt` đi theo. Dữ liệu ~78,5 MB, vừa gói free.
+   Kỳ vọng (đã thử cùng lệnh vào một Mongo khác): `10101 document(s) restored` (10 000 bài chưa xóa:
+   9 900 Wikipedia + 100 Wikinews, không còn ảnh `vnecdn.net`), `7 document(s) restored`; index
+   `ux_posts_slug`, `ix_posts_category_createdAt`, `ix_posts_createdAt` đi theo. Dữ liệu ~78 MB, vừa gói free.
 
 ## 2. Redis Cloud
 
@@ -173,6 +176,22 @@ curl -s -o /dev/null -w 'cold start: %{time_total}s\n' https://newscachesession-
 | Ngày | Thời gian thức dậy |
 |---|---|
 | _(điền sau khi đo)_ | |
+
+## Bản quyền, Google và cờ "trang không an toàn"
+
+| Rủi ro | Đã làm | Bạn cần giữ |
+|---|---|---|
+| Bản quyền nội dung | Bản deploy chỉ có bài Wikipedia (CC BY-SA) và Wikinews (CC BY); **mỗi bài** có khối "Ghi nguồn": link bài gốc, giấy phép, nguồn và tác giả ảnh. Footer ghi giấy phép, không tuyên bố "bảo lưu" nội dung. Bỏ 150 bài VnExpress | Không chép thêm bài/ảnh từ báo hay trang có bản quyền; không xóa khối "Ghi nguồn" |
+| Google coi là trang chép nội dung (spam) | `noindex, nofollow` bằng thẻ meta trong `index.html` và header `X-Robots-Tag` trên mọi đường dẫn Vercel → Google không đưa trang vào kết quả tìm kiếm | **Không** thêm `Disallow: /` vào `robots.txt`: chặn crawl thì Google không đọc được `noindex`, URL vẫn có thể hiện trong kết quả |
+| Bị Safe Browsing gắn cờ "trang lừa đảo" | HTTPS, cookie `Secure` + `HttpOnly`, không render HTML do người dùng nhập (chỉ chuyển URL thành link), chuyển hướng sau đăng nhập chỉ trong cùng trang, không có ảnh `http://`, tên và giao diện không nhái báo nào | Không dùng logo/tên báo thật, không đổi tên miền sang tên giống thương hiệu khác |
+| Người lạ đăng link lừa đảo (ai đăng ký cũng đăng bài được) | — | Rủi ro lớn nhất còn lại: xem mục dưới |
+
+Kiểm tra định kỳ:
+- Trạng thái Safe Browsing: <https://transparencyreport.google.com/safe-browsing/search> (dán URL Vercel).
+- Thêm URL Vercel vào **Google Search Console** → mục *Security issues* sẽ báo ngay nếu trang bị gắn cờ, và
+  là nơi gửi yêu cầu xem xét lại sau khi gỡ nội dung xấu.
+- Vào *Quản trị bài viết* xem có bài lạ không; có thì xóa và thu hồi phiên của tài khoản đó.
+- Chấm xong thì gỡ deploy (mục dưới) — trang không người trông là trang dễ bị lợi dụng nhất.
 
 ## Rollback và gỡ bỏ
 
