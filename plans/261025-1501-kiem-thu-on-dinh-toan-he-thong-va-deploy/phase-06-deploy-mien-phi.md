@@ -116,7 +116,7 @@ Cần Phase 5 xong và `main` đã merge (deploy từ `main`, Render tự deploy
 
 ## Todo
 - [x] `scripts/Smoke/smoke_test.py` xanh trên API QA
-- [ ] `Dockerfile` + `.dockerignore` (xin phép), smoke xanh trên container local
+- [x] `Dockerfile` + `.dockerignore` (xin phép), smoke xanh trên container local
 - [ ] Atlas M0 + chép `posts`, `categories`
 - [ ] Redis Cloud free + chính sách eviction
 - [ ] Render Docker + biến môi trường, đăng ký admin ngay
