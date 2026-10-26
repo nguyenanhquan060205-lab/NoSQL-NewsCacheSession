@@ -18,7 +18,8 @@
 
 2. **Key Redis**: `session:{sessionId}` (Hash, TTL 30 phút) ·
    `post:{postId}` (String JSON, TTL 10 phút) · `post:{postId}:views` (INCR, không TTL) ·
-   `posts:cat:{categoryId}:p{n}` (TTL 3 phút) · `lock:post:{postId}` (`SET NX PX 5000`).
+   `posts:cat:{categoryId}:p{n}:v{ver}` (TTL 3 phút) · `posts:ver` (INCR, không TTL) ·
+   `posts:dirty_views` (Set, không TTL) · `lock:post:{postId}` (`SET <token> NX EX 5`).
    Trong C# dùng helper `CacheKey(id)` / `ViewsKey(id)` ở đầu `PostsController.cs`,
    không ghép chuỗi bằng tay.
 
