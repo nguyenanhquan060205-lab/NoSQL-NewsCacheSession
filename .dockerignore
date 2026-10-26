@@ -1,0 +1,14 @@
+# Image chỉ cần src/NewsCacheSession.Api — bỏ mọi thứ còn lại cho build context nhỏ
+# (riêng scripts/SeedPosts/data đã nặng ~46 MB).
+.git
+.github
+**/bin
+**/obj
+**/node_modules
+src/frontend
+tests
+scripts
+docs
+plans
+*.md
+docker-compose.yml
