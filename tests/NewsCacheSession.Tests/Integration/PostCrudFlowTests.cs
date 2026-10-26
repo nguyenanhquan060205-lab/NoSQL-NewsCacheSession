@@ -86,6 +86,10 @@ public class PostCrudFlowTests : IAsyncLifetime
 
         var codes = responses.Select(r => (int)r.StatusCode).ToList();
         codes.Should().NotContain(500, "unique index ux_posts_slug chặn trùng slug, API phải xử lý thay vì trả 500");
+        codes.Should().OnlyContain(c => c == 201 || c == 409);
+        var created = await _factory.Posts.Find(p => p.Title == "Tin chen nhau").ToListAsync();
+        created.Should().HaveCount(codes.Count(c => c == 201));
+        created.Select(p => p.Slug).Should().OnlyHaveUniqueItems();
     }
 
     [IntegrationFact]

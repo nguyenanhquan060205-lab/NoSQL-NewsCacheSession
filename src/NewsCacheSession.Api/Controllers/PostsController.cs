@@ -47,6 +47,7 @@ public class PostsController : ControllerBase
     private Task BumpListVersionAsync() => _cacheService.IncrementAsync(ListVersionKey);
 
     private const int MaxPageSize = 50;
+    private const int MaxSlugAttempts = 3;
 
     // Bài viết chưa bị xóa mềm. Dùng Ne(true) để khớp cả document cũ chưa có field IsDeleted.
     private static readonly FilterDefinition<Post> NotDeleted =
@@ -315,7 +316,25 @@ public class PostsController : ControllerBase
             CreatedAt = now,
             UpdatedAt = now
         };
-        await _mongo.Posts.InsertOneAsync(post);
+
+        // GenerateUniqueSlugAsync chỉ chống trùng bằng query: hai request cùng tiêu đề chen nhau vẫn
+        // sinh cùng slug và unique index ux_posts_slug chặn ở DB (trước đây 9/10 request trả 500).
+        // Gặp trùng thì sinh lại slug và thử tiếp, quá số lần thì báo 409 thay vì 500.
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await _mongo.Posts.InsertOneAsync(post);
+                break;
+            }
+            catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+            {
+                if (attempt >= MaxSlugAttempts)
+                    return Conflict(new { message = "Đang có bài viết khác cùng tiêu đề được tạo, vui lòng thử lại." });
+
+                post.Slug = await GenerateUniqueSlugAsync(request.Title);
+            }
+        }
 
         // Bài mới phải xuất hiện trên trang chủ ngay, không đợi hết TTL cache danh sách.
         await BumpListVersionAsync();
