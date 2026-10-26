@@ -2,6 +2,10 @@
 
 Trang tin tức tích hợp Redis để cache bài viết và quản lý phiên đăng nhập.
 
+**Bản demo trực tuyến:** <https://no-sql-news-cache-session.vercel.app> (API: <https://newscachesession-api.onrender.com/health>).
+Gói miễn phí nên server ngủ sau 15 phút không có ai truy cập — lần mở đầu chậm khoảng 1 phút; demo chấm
+điểm chạy trên máy. Cách deploy: [`docs/huong-dan-deploy.md`](docs/huong-dan-deploy.md).
+
 > 📌 **Trước khi viết code — kể cả khi dùng AI (Claude Code, Copilot, Cursor…) — hãy đọc
 > [`AGENTS.md`](AGENTS.md).** File đó là hợp đồng dữ liệu chung của nhóm: quy ước đặt tên
 > field MongoDB, keyspace Redis, bảng phân công file và những việc còn thiếu. Làm sai quy
