@@ -20,10 +20,14 @@ public sealed class ImagesController : ControllerBase
     [HttpPost]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(MaxFileSize)]
-    public async Task<IActionResult> Upload(IFormFile? file, CancellationToken cancellationToken)
+    public async Task<IActionResult> Upload(IFormFile? file, [FromServices] IConfiguration config, CancellationToken cancellationToken)
     {
-        if (await _currentUser.GetAsync(HttpContext) == null)
+        var current = await _currentUser.GetAsync(HttpContext);
+        if (current == null)
             return Unauthorized(new { message = "Bạn cần đăng nhập để tải ảnh lên." });
+
+        if (!PostingPolicy.Allows(current, config))
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = PostingPolicy.AdminOnlyMessage });
 
         if (file == null)
             return BadRequest(new { message = "Vui lòng chọn một ảnh." });

@@ -95,6 +95,7 @@ Biến môi trường (chỉ nhập trong dashboard Render, **không commit**):
 | `MongoSettings__DatabaseName` | `newsdb` |
 | `RedisSettings__ConnectionString` | chuỗi ở bước 2.3 |
 | `SessionSettings__TtlMinutes` | `30` |
+| `PostingSettings__AdminOnly` | `true` — **nên đặt**: chỉ admin đăng bài và tải ảnh, người khác vẫn đăng ký/đăng nhập/đọc bài được. Demo trên máy không đặt biến này nên không bị ảnh hưởng |
 | `CloudinarySettings__CloudName`, `__ApiKey`, `__ApiSecret` | tùy chọn — thiếu thì upload ảnh trả 503 rõ ràng, phần còn lại vẫn chạy |
 
 Deploy xong, mở `https://newscachesession-api.onrender.com/health` phải thấy `"status": "Healthy"` cho cả `mongodb` và `redis`.
@@ -184,7 +185,7 @@ curl -s -o /dev/null -w 'cold start: %{time_total}s\n' https://newscachesession-
 | Bản quyền nội dung | Bản deploy chỉ có bài Wikipedia (CC BY-SA) và Wikinews (CC BY); **mỗi bài** có khối "Ghi nguồn": link bài gốc, giấy phép, nguồn và tác giả ảnh. Footer ghi giấy phép, không tuyên bố "bảo lưu" nội dung. Bỏ 150 bài VnExpress | Không chép thêm bài/ảnh từ báo hay trang có bản quyền; không xóa khối "Ghi nguồn" |
 | Google coi là trang chép nội dung (spam) | `noindex, nofollow` bằng thẻ meta trong `index.html` và header `X-Robots-Tag` trên mọi đường dẫn Vercel → Google không đưa trang vào kết quả tìm kiếm | **Không** thêm `Disallow: /` vào `robots.txt`: chặn crawl thì Google không đọc được `noindex`, URL vẫn có thể hiện trong kết quả |
 | Bị Safe Browsing gắn cờ "trang lừa đảo" | HTTPS, cookie `Secure` + `HttpOnly`, không render HTML do người dùng nhập (chỉ chuyển URL thành link), chuyển hướng sau đăng nhập chỉ trong cùng trang, không có ảnh `http://`, tên và giao diện không nhái báo nào | Không dùng logo/tên báo thật, không đổi tên miền sang tên giống thương hiệu khác |
-| Người lạ đăng link lừa đảo (ai đăng ký cũng đăng bài được) | — | Rủi ro lớn nhất còn lại: xem mục dưới |
+| Người lạ đăng link lừa đảo (link trong bài hiện thành link bấm được) | `PostingSettings__AdminOnly=true` trên Render: chỉ admin đăng bài / tải ảnh, người khác nhận 403 "Bản demo trực tuyến chỉ cho quản trị viên đăng bài và tải ảnh." | Giữ biến này trên Render; không chia sẻ tài khoản admin |
 
 Kiểm tra định kỳ:
 - Trạng thái Safe Browsing: <https://transparencyreport.google.com/safe-browsing/search> (dán URL Vercel).

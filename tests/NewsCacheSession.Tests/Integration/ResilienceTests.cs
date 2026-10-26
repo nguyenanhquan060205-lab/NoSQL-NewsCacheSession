@@ -85,7 +85,7 @@ public class ResilienceTests : IAsyncLifetime
         var slowStorage = new SlowImageStorage(TimeSpan.FromSeconds(3));
         await using var app = _factory.WithWebHostBuilder(b =>
             b.ConfigureTestServices(s => s.AddSingleton<IImageStorageService>(slowStorage)));
-        var (admin, _, _) = await SignInAsync(app, "admin_dau_tien");
+        var (admin, _, _) = await NewsApiFactory.SignInOnAsync(app, "admin_dau_tien");
         await admin.GetAsync($"/api/posts/{post.Id}");
         (await _factory.Redis.KeyExistsAsync($"post:{post.Id}")).Should().BeTrue();
 
@@ -119,17 +119,6 @@ public class ResilienceTests : IAsyncLifetime
 
         (await _factory.Redis.SetContainsAsync("posts:dirty_views", postId)).Should().BeTrue(
             "ghi MongoDB lỗi thì lượt flush sau phải thử lại, không được mất dấu bài viết");
-    }
-
-    private static async Task<(HttpClient, string, string)> SignInAsync(
-        Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<NewsCacheSession.Api.Controllers.HealthController> app, string username)
-    {
-        var client = app.CreateClient();
-        var password = NewsApiFactory.NewPassword();
-        var register = await NewsApiFactory.RegisterAsync(client, username, password);
-        var userId = (await NewsApiFactory.ReadJsonAsync(register)).GetProperty("id").GetString()!;
-        var sessionId = await NewsApiFactory.LoginAsync(client, username, password);
-        return (client, sessionId, userId);
     }
 
     /// <summary>Kho ảnh giả: xóa ảnh mất <paramref name="delay"/> như khi Cloudinary phản hồi chậm.</summary>
