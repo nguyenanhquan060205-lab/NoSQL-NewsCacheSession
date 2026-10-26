@@ -102,9 +102,11 @@ Biến môi trường (chỉ nhập trong dashboard Render, **không commit**). 
 
 Deploy xong, mở `https://newscachesession-api.onrender.com/health` phải thấy `"status": "Healthy"` cho cả `mongodb` và `redis`.
 
-> Deploy treo khoảng 15 phút rồi log báo `==> Timed Out` kèm link "Docs on specifying a port": app đang
-> nghe IPv6 `[::]:8080` thay vì `0.0.0.0`. `Dockerfile` đã đặt `ASPNETCORE_URLS=http://0.0.0.0:8080` (log khởi
-> động phải ghi `Now listening on: http://0.0.0.0:8080`). Image build từ bản cũ thì thêm biến này trên Render.
+> Deploy treo khoảng 15 phút rồi log báo `==> Timed Out` dù app đã chạy: Render không nhận được 200 từ health
+> check. Lần deploy đầu bị đúng lỗi này vì ô **Health Check Path** gõ nhầm `/heath` → app trả 404. Kiểm tra
+> *Settings → Health Checks* phải là `/health` (có `/`, không khoảng trắng), sửa xong bấm *Manual Deploy*.
+> Log khởi động phải ghi `Now listening on: http://0.0.0.0:8080` — Render yêu cầu bind `0.0.0.0`, `Dockerfile`
+> đã đặt sẵn `ASPNETCORE_URLS`.
 
 > Nếu tên `newscachesession-api` đã có người dùng và Render cấp URL khác (thêm hậu tố), sửa **2 dòng
 > `destination`** trong `src/frontend/vercel.json` cho đúng URL thật, commit lên `main` rồi mới làm bước 6.
