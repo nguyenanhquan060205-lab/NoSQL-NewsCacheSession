@@ -85,7 +85,9 @@ khi đầy; các key không TTL (`post:{id}:views`, `posts:ver`, `posts:dirty_vi
 | Instance type | Free |
 | Health Check Path | `/health` |
 
-Biến môi trường (chỉ nhập trong dashboard Render, **không commit**):
+Biến môi trường (chỉ nhập trong dashboard Render, **không commit**). Có thể giữ sẵn bộ biến trong file
+`.env.render` ở gốc repo — `.gitignore` đã chặn mọi file `.env`, `.env.*`, `*.env` — rồi dùng
+*Environment → Add from .env* để dán một lần:
 
 | Tên | Giá trị |
 |---|---|
