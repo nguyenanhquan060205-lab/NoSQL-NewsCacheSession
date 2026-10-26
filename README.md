@@ -17,7 +17,7 @@ Trang tin tức tích hợp Redis để cache bài viết và quản lý phiên 
 
 | Công cụ | Phiên bản | Ghi chú |
 |---|---|---|
-| .NET SDK | **8.0+** | chạy API |
+| .NET SDK | **8.0+** (chạy test cần **10**) | chạy API; project test nhắm `net10.0` |
 | Node.js | 20+ | chạy frontend |
 | Docker Desktop | bản mới | MongoDB, Redis, RedisInsight |
 | Python | 3.10+ | script seed dữ liệu |
@@ -30,6 +30,10 @@ Trang tin tức tích hợp Redis để cache bài viết và quản lý phiên 
 > net stop MongoDB
 > Set-Service MongoDB -StartupType Manual   # không tự bật lại sau khi khởi động máy
 > ```
+>
+> **macOS cài MongoDB qua Homebrew** cũng chiếm `127.0.0.1:27017` (kiểm tra:
+> `lsof -nP -iTCP:27017 -sTCP:LISTEN` thấy `mongod` thay vì `com.docker…`). Dừng trước khi
+> `docker compose up`: `brew services stop mongodb-community` (bật lại khi cần dùng project khác).
 
 ## Cách chạy
 
@@ -75,11 +79,29 @@ thiết kế, không phải lỗi.
 ## Test
 
 ```bash
-# Backend — toàn bộ dùng mock, không cần Redis/Mongo chạy
+# Backend — unit test dùng mock, không cần Redis/Mongo; integration test tự bỏ qua (Skipped)
 dotnet test
 
 # Frontend
 cd src/frontend && npm test
+```
+
+**Integration test** đi qua HTTP thật tới Redis + MongoDB thật (đăng ký/đăng nhập, CRUD, Cache-Aside,
+invalidation, session, lượt xem, Redis/Mongo sập). Chạy trên container **riêng**, không đụng dữ liệu demo:
+
+```bash
+docker run -d --name news-mongo-qa -p 27019:27017 mongo:7.0
+docker run -d --name news-redis-qa -p 6380:6379 redis:7-alpine redis-server --save "" --appendonly no
+NEWS_IT=1 dotnet test
+```
+
+Test chỉ dùng database `newsdb_it_*` (tự xóa khi xong) và Redis DB 15 (`FLUSHDB` trước mỗi test).
+Trỏ sang chỗ khác bằng `NEWS_IT_MONGO` / `NEWS_IT_REDIS`. Dọn: `docker rm -f news-mongo-qa news-redis-qa`.
+
+**Smoke test** sau khi chạy hoặc deploy (tự tạo rồi tự xóa một bài test, cần tài khoản admin):
+
+```bash
+SMOKE_ADMIN_PASS=... python scripts/Smoke/smoke_test.py --base-url http://localhost:5134 --admin-user <admin>
 ```
 
 > ⚠️ `tests/NewsCacheSession.Tests.csproj` đang nhắm `net10.0` còn API nhắm `net8.0`.
