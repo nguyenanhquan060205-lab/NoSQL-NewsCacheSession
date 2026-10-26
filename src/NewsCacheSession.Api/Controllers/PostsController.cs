@@ -384,10 +384,12 @@ public class PostsController : ControllerBase
         // Cache Invalidation — DB gốc đã đổi nên phải bỏ bản cache cũ:
         //   1. xóa cache nội dung bài viết
         //   2. tăng phiên bản để cache danh sách (tiêu đề/chuyên mục có thể đã đổi) hết hiệu lực
-        await TryDeleteImageAsync(oldImagePublicId, request.ImagePublicId);
+        // Làm NGAY sau khi ghi MongoDB, trước khi xóa ảnh cũ: Cloudinary chậm (tới hết timeout)
+        // thì bản cache cũ không được phép sống trong suốt thời gian chờ đó.
         await Task.WhenAll(
             _cacheService.RemoveAsync(CacheKey(id)),
             BumpListVersionAsync());
+        await TryDeleteImageAsync(oldImagePublicId, request.ImagePublicId);
 
         return Ok(PostResponse.FromModel(updated));
     }
@@ -435,10 +437,11 @@ public class PostsController : ControllerBase
         // Cache Invalidation: xóa bản cache nội dung + hạ hiệu lực cache danh sách.
         // KHÔNG xóa post:{id}:views — đây là xóa mềm (bài có thể phục hồi) và lượt xem
         // là số liệu tích lũy, phải để job flush của SV2 chốt về MongoDB trước.
-        await TryDeleteImageAsync(oldImagePublicId, null);
+        // Xóa cache trước khi gọi Cloudinary, cùng lý do như ở Update.
         await Task.WhenAll(
             _cacheService.RemoveAsync(CacheKey(id)),
             BumpListVersionAsync());
+        await TryDeleteImageAsync(oldImagePublicId, null);
 
         return NoContent();
     }
