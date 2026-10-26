@@ -42,7 +42,7 @@ khi đầy; các key không TTL (`post:{id}:views`, `posts:ver`, `posts:dirty_vi
 2. *Database Access* → tạo database user, mật khẩu mạnh (tự sinh), quyền **readWrite** trên DB `newsdb`.
 3. *Network Access* → `0.0.0.0/0` (Render free không có IP tĩnh — vì vậy mật khẩu DB phải mạnh).
 4. *Connect → Drivers* → chép chuỗi `mongodb+srv://...`, thêm tham số để request không treo 30 giây
-   khi Atlas chập chờn (đo được ở `plans/.../reports/04-do-ben.md`):
+   khi Atlas chập chờn (giống chuỗi mặc định trong `appsettings.json`):
    `mongodb+srv://<user>:<pass>@<cluster>/?retryWrites=true&w=majority&serverSelectionTimeoutMS=5000`
 5. Chép dữ liệu — **chỉ** `posts` và `categories`, **không** chép `users` (khỏi mang tài khoản demo và
    hash mật khẩu lên mạng). Chạy ở gốc repo khi stack local đang bật:
@@ -75,6 +75,7 @@ khi đầy; các key không TTL (`post:{id}:views`, `posts:ver`, `posts:dirty_vi
 
 | Mục | Giá trị |
 |---|---|
+| Name | **`newscachesession-api`** → URL `https://newscachesession-api.onrender.com` (đã ghi sẵn trong `src/frontend/vercel.json`) |
 | Branch | `main` |
 | Runtime / Language | **Docker** (tự nhận `Dockerfile` ở gốc repo) |
 | Region | Singapore |
@@ -93,7 +94,10 @@ Biến môi trường (chỉ nhập trong dashboard Render, **không commit**):
 | `SessionSettings__TtlMinutes` | `30` |
 | `CloudinarySettings__CloudName`, `__ApiKey`, `__ApiSecret` | tùy chọn — thiếu thì upload ảnh trả 503 rõ ràng, phần còn lại vẫn chạy |
 
-Deploy xong, mở `https://<service>.onrender.com/health` phải thấy `"status": "Healthy"` cho cả `mongodb` và `redis`.
+Deploy xong, mở `https://newscachesession-api.onrender.com/health` phải thấy `"status": "Healthy"` cho cả `mongodb` và `redis`.
+
+> Nếu tên `newscachesession-api` đã có người dùng và Render cấp URL khác (thêm hậu tố), sửa **2 dòng
+> `destination`** trong `src/frontend/vercel.json` cho đúng URL thật, commit lên `main` rồi mới làm bước 6.
 
 ## 4. Đăng ký admin NGAY
 
@@ -103,7 +107,7 @@ gửi URL cho bất kỳ ai:
 ```bash
 curl -s -H 'Content-Type: application/json' \
   -d '{"username":"<tên-admin>","password":"<mật-khẩu-mạnh>"}' \
-  https://<service>.onrender.com/api/auth/register
+  https://newscachesession-api.onrender.com/api/auth/register
 # phải thấy "role":"admin"
 ```
 
@@ -114,7 +118,7 @@ trong Atlas Data Explorer. Reset dữ liệu thì drop cả `users` lẫn `meta`
 
 ```bash
 export SMOKE_ADMIN_PASS='<mật-khẩu-admin>'
-python scripts/Smoke/smoke_test.py --base-url https://<service>.onrender.com --admin-user <tên-admin>
+python scripts/Smoke/smoke_test.py --base-url https://newscachesession-api.onrender.com --admin-user <tên-admin>
 ```
 
 8 bước phải `PASS` (script tự tạo rồi tự xóa một bài test). Lần đầu có thể chậm ~1 phút nếu server đang ngủ.
@@ -123,14 +127,14 @@ python scripts/Smoke/smoke_test.py --base-url https://<service>.onrender.com --a
 
 1. *Add New → Project* → chọn repo → **Root Directory: `src/frontend`**, Framework: Vite,
    Build: `npm run build`, Output: `dist`.
-2. File `src/frontend/vercel.json` (commit sau khi có URL Render thật):
+2. File `src/frontend/vercel.json` đã có sẵn trong repo (URL Render theo tên ở bước 3):
 
    ```json
    {
      "$schema": "https://openapi.vercel.sh/vercel.json",
      "rewrites": [
-       { "source": "/api/:path*", "destination": "https://<service>.onrender.com/api/:path*" },
-       { "source": "/health", "destination": "https://<service>.onrender.com/health" },
+       { "source": "/api/:path*", "destination": "https://newscachesession-api.onrender.com/api/:path*" },
+       { "source": "/health", "destination": "https://newscachesession-api.onrender.com/health" },
        { "source": "/(.*)", "destination": "/index.html" }
      ],
      "headers": [
@@ -163,7 +167,7 @@ Sau đó mở trình duyệt: badge HIT/MISS ở trang chi tiết, đăng nhập
 Để server không có request hơn 15 phút rồi:
 
 ```bash
-curl -s -o /dev/null -w 'cold start: %{time_total}s\n' https://<service>.onrender.com/health
+curl -s -o /dev/null -w 'cold start: %{time_total}s\n' https://newscachesession-api.onrender.com/health
 ```
 
 | Ngày | Thời gian thức dậy |
@@ -182,6 +186,6 @@ curl -s -o /dev/null -w 'cold start: %{time_total}s\n' https://<service>.onrende
   tài liệu này chỉ ghi **tên** biến.
 - Atlas mở `0.0.0.0/0` → bắt buộc mật khẩu DB mạnh, user chỉ có `readWrite` trên `newsdb`.
 - Ai cũng đăng ký được tài khoản thường và đăng bài — chấp nhận cho đồ án.
-- Render kết thúc HTTPS ở proxy và chuyển request vào container bằng HTTP, nên API thấy `IsHttps = false`
-  và cookie `SessionId` không có cờ `Secure` (vẫn chỉ đi qua HTTPS vì trang chạy HTTPS). Muốn có cờ
-  `Secure` cần bật `UseForwardedHeaders` trong `Program.cs` (file dùng chung — chưa làm).
+- Render kết thúc HTTPS ở proxy rồi chuyển vào container bằng HTTP; API đọc `X-Forwarded-Proto`
+  (`UseForwardedHeaders` trong `Program.cs`) nên cookie `SessionId` vẫn có cờ `Secure` trên bản deploy.
+  Kiểm tra: DevTools → Application → Cookies, cột *Secure* phải được tích.
