@@ -9,3 +9,18 @@ public interface ISessionService
     Task RefreshSessionAsync(string sessionId, TimeSpan ttl);
     Task RemoveSessionAsync(string sessionId);
 }
+
+/// <summary>
+/// TTL phiên đọc từ <c>SessionSettings:TtlMinutes</c> — một nguồn duy nhất cho Hash session,
+/// cookie lúc đăng nhập và sliding expiration ở middleware.
+/// </summary>
+public static class SessionTtl
+{
+    private const int DefaultMinutes = 30;
+
+    public static TimeSpan From(IConfiguration config)
+    {
+        var minutes = config.GetValue("SessionSettings:TtlMinutes", DefaultMinutes);
+        return TimeSpan.FromMinutes(minutes > 0 ? minutes : DefaultMinutes);
+    }
+}

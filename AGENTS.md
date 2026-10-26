@@ -52,7 +52,8 @@ bài nào.
 | `post:{postId}:views` | String (số) | không TTL |
 | `posts:cat:{categoryId}:p{n}:v{ver}` | String (JSON list) | 3 phút |
 | `posts:ver` | String (số) | không TTL — `INCR` để vô hiệu hóa cache danh sách |
-| `lock:post:{postId}` | String | 5 giây (`SET NX PX 5000`) |
+| `lock:post:{postId}` | String | 5 giây (`SET <token> NX EX 5`, giải phóng có so token) |
+| `posts:dirty_views` | Set | không TTL — ID bài có lượt xem chưa chốt về MongoDB (worker `SPOP` mỗi phút) |
 
 Trong C# **không ghép chuỗi key bằng tay**. Dùng helper có sẵn ở đầu
 `Controllers/PostsController.cs`: `CacheKey(id)`, `ViewsKey(id)`, `CachePrefix`,
@@ -198,7 +199,8 @@ cd src/frontend && npm install && npm run dev         # frontend Vite
 Mongo: `mongodb://localhost:27017`, database `newsdb`. Redis: `localhost:6379`.
 
 > ⚠️ Dữ liệu test cũ (ghi trước 30/09/2026) dùng tên field PascalCase nên **không
-> đọc được nữa**. Cần `db.posts.drop()`, `db.users.drop()` rồi seed lại.
+> đọc được nữa**. Cần `db.posts.drop()`, `db.users.drop()`, `db.meta.drop()` rồi seed lại
+> (`meta` chốt quyền admin đầu tiên — còn nó thì không ai đăng ký được làm admin).
 
 ## 9. Barem chấm điểm — để biết việc gì thực sự quan trọng
 

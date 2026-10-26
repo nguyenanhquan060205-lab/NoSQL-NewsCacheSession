@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using MongoDB.Driver;
 using NewsCacheSession.Api.Data;
@@ -23,6 +24,17 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
+});
+
+// Render/Vercel kết thúc HTTPS ở proxy rồi chuyển vào container bằng HTTP kèm X-Forwarded-Proto.
+// Đọc header này để Request.IsHttps đúng → cookie SessionId có cờ Secure trên bản deploy.
+// IP proxy của Render không cố định nên tin header từ mọi nguồn; app không dùng IP client cho
+// phân quyền, giả mạo header chỉ làm cookie thêm/bớt cờ Secure. Chạy local không có header → không đổi gì.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
 // Mongo
@@ -54,6 +66,8 @@ builder.Services.AddHealthChecks()
     .AddCheck<RedisHealthCheck>("redis", tags: new[] { "cache", "nosql" });
 
 var app = builder.Build();
+
+app.UseForwardedHeaders(); // trước mọi middleware đọc Request.Scheme
 
 if (app.Environment.IsDevelopment())
 {
