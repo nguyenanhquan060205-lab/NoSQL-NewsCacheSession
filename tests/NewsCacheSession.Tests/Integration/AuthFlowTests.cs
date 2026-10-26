@@ -77,6 +77,28 @@ public class AuthFlowTests : IAsyncLifetime
     }
 
     [IntegrationFact]
+    public async Task Login_BehindHttpsProxy_ShouldMarkSessionCookieSecure()
+    {
+        // Render/Vercel kết thúc HTTPS ở proxy rồi chuyển vào container bằng HTTP kèm X-Forwarded-Proto.
+        var client = _factory.CreateClient();
+        var password = NewsApiFactory.NewPassword();
+        await NewsApiFactory.RegisterAsync(client, "sau_proxy", password);
+
+        var viaProxy = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login")
+        {
+            Content = JsonContent.Create(new { username = "sau_proxy", password })
+        };
+        viaProxy.Headers.Add("X-Forwarded-Proto", "https");
+        var proxied = await client.SendAsync(viaProxy);
+        var direct = await client.PostAsJsonAsync("/api/auth/login", new { username = "sau_proxy", password });
+
+        proxied.Headers.GetValues("Set-Cookie").Single(c => c.StartsWith("SessionId="))
+            .ToLowerInvariant().Should().Contain("secure", "trình duyệt chỉ được gửi cookie phiên qua HTTPS");
+        direct.Headers.GetValues("Set-Cookie").Single(c => c.StartsWith("SessionId="))
+            .ToLowerInvariant().Should().NotContain("secure", "chạy local bằng HTTP vẫn phải đăng nhập được");
+    }
+
+    [IntegrationFact]
     public async Task Login_WrongPasswordAndUnknownUsername_ShouldReturnSame401Message()
     {
         var client = _factory.CreateClient();
