@@ -119,19 +119,19 @@ export default function Navbar() {
                   </svg>
                   <span className="hidden xl:inline">Quản lý phiên</span>
                 </Link>
+                <Link
+                  to="/posts/new"
+                  aria-label="Viết bài"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-red-700 px-2.5 text-sm font-bold text-white transition-colors hover:bg-red-800 sm:px-3"
+                >
+                  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
+                  </svg>
+                  <span className="hidden sm:inline">Viết bài</span>
+                </Link>
               </>
             ) : null}
-            <Link
-              to="/posts/new"
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-red-700 px-2.5 text-sm font-bold text-white transition-colors hover:bg-red-800 sm:px-3"
-            >
-              <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
-              </svg>
-              <span className="hidden sm:inline">Viết bài</span>
-              <span className="sr-only sm:hidden">Viết bài</span>
-            </Link>
             {user ? (
               <>
                 <span className="hidden max-w-32 truncate text-sm font-semibold text-zinc-600 xl:inline" title={user.username}>

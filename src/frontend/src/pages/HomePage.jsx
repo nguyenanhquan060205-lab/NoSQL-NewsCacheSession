@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import PostCard from '../components/PostCard';
+import { useAuth } from '../context/useAuth';
 import { postsApi } from '../services/api';
 import { previewPosts } from '../data/previewPosts';
 
@@ -34,6 +35,8 @@ function LoadingState() {
 }
 
 export default function HomePage() {
+  const { user } = useAuth();
+  const canPost = user?.role === 'admin';
   const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -164,11 +167,15 @@ export default function HomePage() {
                 {categoryId ? 'Chuyên mục chưa có bài viết' : 'Chưa có bài viết nào'}
               </h2>
               <p className="mt-2 text-sm text-zinc-600">
-                {categoryId ? 'Hãy chọn chuyên mục khác hoặc xem toàn bộ tin mới nhất.' : 'Hãy là người đầu tiên chia sẻ một câu chuyện mới.'}
+                {categoryId
+                  ? 'Hãy chọn chuyên mục khác hoặc xem toàn bộ tin mới nhất.'
+                  : (canPost ? 'Hãy là người đầu tiên chia sẻ một câu chuyện mới.' : 'Bài viết mới sẽ xuất hiện tại đây ngay khi được đăng.')}
               </p>
-              <Link to={categoryId ? '/' : '/posts/new'} className="mt-6 inline-flex min-h-11 items-center rounded-lg bg-zinc-950 px-5 text-sm font-black text-white hover:bg-red-700">
-                {categoryId ? 'Xem tất cả tin' : 'Viết bài đầu tiên'}
-              </Link>
+              {categoryId || canPost ? (
+                <Link to={categoryId ? '/' : '/posts/new'} className="mt-6 inline-flex min-h-11 items-center rounded-lg bg-zinc-950 px-5 text-sm font-black text-white hover:bg-red-700">
+                  {categoryId ? 'Xem tất cả tin' : 'Viết bài đầu tiên'}
+                </Link>
+              ) : null}
             </div>
           ) : null}
 
