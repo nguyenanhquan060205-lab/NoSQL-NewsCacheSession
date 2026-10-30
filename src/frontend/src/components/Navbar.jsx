@@ -122,6 +122,18 @@ export default function Navbar() {
               </>
             ) : null}
             <Link
+              to="/benchmark"
+              aria-label="Đo hiệu năng"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2.5 text-sm font-bold text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-red-700 sm:px-3"
+            >
+              <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <path d="M3 13a9 9 0 0 1 18 0" />
+                <path d="m12 13 4-4" />
+                <path d="M3 17h18" />
+              </svg>
+              <span className="hidden xl:inline">Đo hiệu năng</span>
+            </Link>
+            <Link
               to="/posts/new"
               className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-red-700 px-2.5 text-sm font-bold text-white transition-colors hover:bg-red-800 sm:px-3"
             >
