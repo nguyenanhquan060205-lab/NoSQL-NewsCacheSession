@@ -1,5 +1,7 @@
+import io
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 import plot
@@ -50,6 +52,20 @@ class PlotTests(unittest.TestCase):
             self.assertNotIn("999", summary)
             self.assertIn("10.150 bài viết", summary)
             self.assertIn("API, MongoDB, Redis", summary)
+
+    def test_help_prints_usage_instead_of_treating_flag_as_path(self):
+        out = io.StringIO()
+        with redirect_stdout(out), self.assertRaises(SystemExit) as exit_info:
+            plot.main(["--help"])
+        self.assertEqual(exit_info.exception.code, 0)
+        self.assertIn("run_dir", out.getvalue())
+
+    def test_missing_run_dir_reports_clear_error(self):
+        err = io.StringIO()
+        with tempfile.TemporaryDirectory() as tmp, redirect_stderr(err), self.assertRaises(SystemExit) as exit_info:
+            plot.main([str(Path(tmp) / "khong-co")])
+        self.assertEqual(exit_info.exception.code, 2)
+        self.assertIn("raw_latency.csv", err.getvalue())
 
 
 if __name__ == "__main__":

@@ -10,24 +10,31 @@ Mọi key liên quan bài viết nằm chung namespace `post:` / `posts:` để 
 | `post:{postId}:views` | String (số nguyên) | Không TTL | Bộ đếm lượt xem thời gian thực bằng `INCR` |
 | `posts:cat:{categoryId}:p{n}:v{ver}` | String (JSON serialize list) | 3 phút | Cache danh sách bài viết theo chuyên mục, theo trang |
 | `posts:ver` | String (số nguyên) | Không TTL | Số phiên bản cache danh sách — `INCR` để vô hiệu hóa toàn bộ |
-| `lock:post:{postId}` | String | 5 giây | Khóa chống cache stampede — `SET key value NX PX 5000` |
+| `lock:post:{postId}` | String | 5 giây | Khóa chống cache stampede — `SET key <token ngẫu nhiên> NX EX 5`, giải phóng bằng transaction so token |
+| `posts:dirty_views` | Set | Không TTL | ID các bài có lượt xem chưa chốt về MongoDB — `SADD` mỗi lượt xem, worker `SPOP` mỗi phút (Write-Behind) |
 
 Hằng số tương ứng trong code nằm ở đầu `Controllers/PostsController.cs`
 (`CachePrefix`, `ListCachePrefix`, `ListVersionKey`, `CacheKey()`, `ViewsKey()`),
-`Services/RedisSessionService.cs` và `Services/CurrentUserService.cs`.
+`Services/RedisSessionService.cs`, `Services/CurrentUserService.cs` và
+`Services/RedisCacheService.cs` (`posts:dirty_views`).
 Sửa key thì sửa cả code lẫn bảng này.
 
 ### Field trong Hash `session:{sessionId}`
 
 | Field | Ai ghi | Ghi chú |
 |---|---|---|
-| `userId`, `username`, `loginAt` | `RedisSessionService.CreateSessionAsync` (SV2) | `loginAt` là Unix seconds |
-| `role` | `AuthController.Login` → `CurrentUserService.TouchAsync` (SV1) | `"admin"` hoặc `"user"` |
-| `lastActive` | `CurrentUserService.TouchAsync` (SV1) | Unix seconds |
+| `userId`, `username`, `role`, `loginAt`, `lastActive` | `AuthController.Login` → `RedisSessionService.CreateSessionAsync` | Cả 5 field + `EXPIRE` trong **một** `MULTI/EXEC`; thời điểm là Unix seconds |
+| `lastActive` (cập nhật) | `SessionAuthMiddleware` → `RedisSessionService.RefreshSessionAsync` | Mỗi request có phiên hợp lệ, cùng transaction với `EXPIRE` (sliding) |
+| `role` (bổ sung) | `CurrentUserService.TouchAsync` | Chỉ cho phiên tạo bởi bản code cũ chưa có field này |
 
 `role` được ghi vào Hash ngay lúc đăng nhập để mọi request sau đó biết người gọi có
 phải admin hay không **mà không phải query MongoDB**. Phiên tạo bởi bản code cũ chưa
 có field này thì được tra bù một lần rồi ghi lại vào Hash.
+
+Tạo phiên phải là một `MULTI/EXEC`: gửi `HSET` rồi `EXPIRE` thành hai lệnh rời thì tiến
+trình chết giữa chừng để lại một Hash không TTL nằm vĩnh viễn trong Redis. TTL lấy từ
+`SessionSettings:TtlMinutes` (mặc định 30) cho cả Hash lẫn `Max-Age` cookie; middleware cấp
+lại cookie mỗi lần gia hạn để cookie trượt cùng TTL trên Redis.
 
 `HSET` trên key đã tồn tại **không xóa TTL**, nên ghi thêm field không làm phiên mất
 hạn hay được gia hạn ngoài ý muốn — đã kiểm chứng bằng `TTL session:{id}` sau khi ghi.
@@ -59,8 +66,10 @@ hạn hay được gia hạn ngoài ý muốn — đã kiểm chứng bằng `TT
 - **Danh sách theo chuyên mục (3 phút)**: ngắn nhất vì danh sách thay đổi thường
   xuyên nhất (bài mới đăng, bài bị xóa) và ảnh hưởng trực tiếp tới trang chủ.
 - **Lock (5 giây)**: chỉ cần đủ cho một request truy vấn MongoDB xong (~200ms), đặt
-  5 giây để dư an toàn. PX bắt buộc phải có: nếu tiến trình giữ khóa chết giữa đường
+  5 giây để dư an toàn. TTL bắt buộc phải có: nếu tiến trình giữ khóa chết giữa đường
   mà khóa không tự hết hạn thì mọi request sau đều bị chặn vĩnh viễn.
+- **Tập `posts:dirty_views` (không TTL)**: là hàng đợi việc của worker — hết hạn thì
+  lượt xem đã đếm trên Redis không bao giờ được chốt về MongoDB.
 
 ## Luồng Cache-Aside (đọc bài viết)
 
@@ -68,11 +77,31 @@ Hiện thực ở `GET /api/posts/{id}`.
 
 1. Nhận request → `GET post:{postId}`.
 2. **HIT** → deserialize JSON, trả về ngay (~<5ms).
-3. **MISS** → thử giành khóa `SET lock:post:{postId} 1 NX PX 5000`:
-   - **Giành được** → query MongoDB → `SET post:{postId} {json} EX 600` → trả về →
-     `DEL lock:post:{postId}`.
-   - **Không giành được** (request khác đang xử lý) → đợi ngắn rồi đọc lại cache,
-     tránh nhiều request cùng đập vào MongoDB (chống cache stampede).
+3. **MISS** → thử giành khóa `SET lock:post:{postId} <token> NX EX 5` (token ngẫu nhiên
+   của request — `LockTake` của StackExchange.Redis):
+   - **Giành được** → đọc lại cache một lần nữa → query MongoDB →
+     `SET post:{postId} {json} EX 600` → trả về → giải phóng khóa bằng transaction có điều kiện
+     (`WATCH` → `GET` so token → `MULTI`/`UNLINK`/`EXEC` — `LockRelease`), chỉ xóa khi giá trị
+     đúng token của mình, để không xóa nhầm khóa của request khác khi khóa của mình đã hết hạn.
+   - **Không giành được** (request khác đang xử lý) → đợi 50ms rồi đọc lại cache, tối đa
+     40 lượt (2 giây), tránh nhiều request cùng đập vào MongoDB (chống cache stampede).
+     Hết lượt mà vẫn không có cache (tiến trình giữ khóa đã chết) → đọc thẳng MongoDB và
+     **không** ghi cache.
+
+### Khi Redis không sẵn sàng
+
+Cache chỉ là bản sao: đọc cache lỗi thì coi như MISS và đọc thẳng MongoDB; ghi/xóa cache
+lỗi thì bỏ qua (bản cũ tự hết theo TTL — đây là lý do cache bài viết chỉ sống 10 phút).
+Đăng nhập, kiểm tra phiên, đếm lượt xem bắt buộc cần Redis nên trả **503**. Trước mỗi lệnh,
+code kiểm tra kết nối để báo lỗi ngay, không xếp hàng chờ 5 giây trong backlog của thư viện.
+
+## Bộ đếm lượt xem (Write-Behind)
+
+`POST /api/posts/{id}/view` → `INCR post:{postId}:views` + `SADD posts:dirty_views {postId}`.
+Lượt xem đầu tiên (key đếm chưa có) khởi tạo bằng `SET NX` từ `posts.views` trong MongoDB,
+nên Redis mất dữ liệu cũng không đếm lại từ 0. `ViewCountSyncWorker` mỗi phút `SPOP` hết
+`posts:dirty_views` rồi ghi giá trị đếm về `posts.views`; ghi MongoDB lỗi thì trả ID về Set
+để lượt sau thử lại.
 
 ## Cache Invalidation
 

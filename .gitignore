@@ -3,8 +3,11 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
-# dotenv files
+# dotenv files — kể cả .env.render chứa chuỗi kết nối Atlas/Redis Cloud cho Render
 .env
+.env.*
+*.env
+!.env.example
 
 # User-specific files
 *.rsuser

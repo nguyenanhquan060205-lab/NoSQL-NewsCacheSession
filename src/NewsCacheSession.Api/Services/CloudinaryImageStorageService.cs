@@ -24,12 +24,16 @@ public sealed class CloudinaryImageStorageService : IImageStorageService
             ["image/webp"] = "webp",
         };
 
+    // HttpClient mặc định chờ 100 giây; Cloudinary treo thì request sửa/xóa bài và tải ảnh treo theo.
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(15);
+
     private readonly HttpClient _httpClient;
     private readonly CloudinarySettings _settings;
 
     public CloudinaryImageStorageService(HttpClient httpClient, IOptions<CloudinarySettings> options)
     {
         _httpClient = httpClient;
+        _httpClient.Timeout = RequestTimeout;
         _settings = options.Value;
     }
 

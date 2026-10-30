@@ -8,6 +8,7 @@ Cách chạy:
 Kết quả: results/<nhãn>/charts/*.png và results/<nhãn>/summary.md
 """
 
+import argparse
 import csv
 import json
 import sys
@@ -218,11 +219,11 @@ def render_summary(run: dict) -> str:
 def main(argv=None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
-    argv = sys.argv[1:] if argv is None else argv
-    if len(argv) != 1:
-        print("Cách dùng: python plot.py results/<nhãn>")
-        return 2
-    run_dir = Path(argv[0])
+    parser = argparse.ArgumentParser(description="Vẽ biểu đồ + bảng số liệu từ kết quả của benchmark.py.")
+    parser.add_argument("run_dir", type=Path, help="Thư mục kết quả, ví dụ results/2026-10-25-chinh-thuc")
+    run_dir = parser.parse_args(argv).run_dir
+    if not (run_dir / "raw_latency.csv").is_file():
+        parser.error(f"không thấy {run_dir / 'raw_latency.csv'} — đã chạy benchmark.py với --label này chưa?")
     run = load_run(run_dir)
     charts_dir = run_dir / "charts"
     charts_dir.mkdir(exist_ok=True)

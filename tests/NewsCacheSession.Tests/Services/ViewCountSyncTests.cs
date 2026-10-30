@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using NewsCacheSession.Api.Controllers;
 using NewsCacheSession.Api.Services;
@@ -20,12 +21,17 @@ public class ViewCountSyncTests
         _mockCurrentUser = new Mock<ICurrentUserService>();
     }
 
+    // MongoContext để null: các test này chỉ đi nhánh Redis, không chạm MongoDB hay kho ảnh.
+    private PostsController CreateController() =>
+        new(null!, _mockCache.Object, _mockCurrentUser.Object,
+            Mock.Of<IImageStorageService>(), NullLogger<PostsController>.Instance);
+
     [Fact]
     public async Task IncrementView_WithValidId_ShouldCallIncrementAndReturnNewCount()
     {
         // Arrange
         var postId = "507f1f77bcf86cd799439011";
-        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        var controller = CreateController();
         controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
 
         // Key đếm đã tồn tại nên không cần tra MongoDB (MongoContext để null)
@@ -41,13 +47,16 @@ public class ViewCountSyncTests
         result.Should().NotBeNull();
         _mockCache.Verify(c => c.IncrementAsync($"post:{postId}:views"), Times.Once);
         _mockCache.Verify(c => c.MarkDirtyViewAsync(postId), Times.Once);
+
+        // Bộ đếm đang chạy thì không được khởi tạo lại từ posts.views
+        _mockCache.Verify(c => c.SetIfNotExistsAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
     public async Task IncrementView_WithInvalidId_ShouldReturnBadRequest()
     {
         // Arrange
-        var controller = new PostsController(null!, _mockCache.Object, _mockCurrentUser.Object);
+        var controller = CreateController();
 
         // Act
         var result = await controller.IncrementView("invalid-id") as BadRequestObjectResult;

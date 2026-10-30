@@ -1,0 +1,202 @@
+=== BẮT ĐẦU KIỂM TRA SRS: srs-v2.0.md ===
+
+[C1] Phát hiện 1 lỗi:
+  - [C1] docs/SRS.md:605 Endpoint không hợp lệ: `POST /api/images/upload`
+
+[C2] Phát hiện 12 lỗi:
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `GET /api/auth/me`
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `GET /api/cache/stats`
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `GET /api/categories/slug/{}`
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `GET /api/categories/{}`
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `GET /api/health`
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `GET /api/posts`
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `GET /health`
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `POST /api/auth/login`
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `POST /api/auth/register`
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `POST /api/images`
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `POST /api/posts`
+  - [C2] docs/SRS.md:0 Thiếu endpoint từ code: `PUT /api/posts/{}`
+
+[C3] Phát hiện 14 lỗi:
+  - [C3] docs/SRS.md:123 Đường dẫn không tồn tại: `CACHE HIT/MISS Badge`
+  - [C3] docs/SRS.md:302 Đường dẫn không tồn tại: `application/json; charset=utf-8`
+  - [C3] docs/SRS.md:304 Đường dẫn không tồn tại: `Path = /`
+  - [C3] docs/SRS.md:338 Đường dẫn không tồn tại: `MULTI / EXEC`
+  - [C3] docs/SRS.md:350 Đường dẫn không tồn tại: `MULTI / EXEC`
+  - [C3] docs/SRS.md:356 Đường dẫn không tồn tại: `POST /api/auth/logout`
+  - [C3] docs/SRS.md:365 Đường dẫn không tồn tại: `GET /api/auth/sessions`
+  - [C3] docs/SRS.md:427 Đường dẫn không tồn tại: `GET /api/categories`
+  - [C3] docs/SRS.md:428 Đường dẫn không tồn tại: `POST /api/categories`
+  - [C3] docs/SRS.md:454 Đường dẫn không tồn tại: `UNLINK/EXEC`
+  - [C3] docs/SRS.md:605 Đường dẫn không tồn tại: `POST /api/images/upload`
+  - [C3] docs/SRS.md:804 Thư mục cha không tồn tại: `DTOs/Auth/*`
+  - [C3] docs/SRS.md:807 Thư mục cha không tồn tại: `DTOs/Posts/*`
+  - [C3] docs/SRS.md:829 Đường dẫn không tồn tại: `src/frontend/src/components/CacheBadge.jsx`
+
+[C4] Phát hiện 7 lỗi:
+  - [C4] docs/SRS.md:173 Tên cookie sai: `news_session` (mong đợi `SessionId`)
+  - [C4] docs/SRS.md:304 Tên cookie sai: `news_session` (mong đợi `SessionId`)
+  - [C4] docs/SRS.md:339 Tên cookie sai: `news_session` (mong đợi `SessionId`)
+  - [C4] docs/SRS.md:344 Tên cookie sai: `news_session` (mong đợi `SessionId`)
+  - [C4] docs/SRS.md:351 Tên cookie sai: `news_session` (mong đợi `SessionId`)
+  - [C4] docs/SRS.md:360 Tên cookie sai: `news_session` (mong đợi `SessionId`)
+  - [C4] docs/SRS.md:730 Tên cookie sai: `news_session` (mong đợi `SessionId`)
+[C5] ĐẠT
+
+[C6] Phát hiện 1 lỗi:
+  - [C6] docs/SRS.md:590 Field stats sai: có ['cacheHits', 'cacheMisses', 'hitRatio', 'totalLookups', 'uptimeSeconds'], mong đợi ['hitRate', 'hits', 'misses', 'totalRequests']
+
+[C7] Phát hiện 2 lỗi:
+  - [C7] docs/SRS.md:204 Ánh xạ cổng không hợp lệ: `8001:5540`
+  - [C7] docs/SRS.md:865 Cổng localhost không hợp lệ: `localhost:8001`
+
+[C8] Phát hiện 5 lỗi:
+  - [C8] docs/SRS.md:123 Phiên bản React sai: `React 18` (thật là React 19)
+  - [C8] docs/SRS.md:123 Phiên bản Vite sai: `Vite 5` (thật là Vite 8)
+  - [C8] docs/SRS.md:203 Image Redis sai: `redis:7.0-alpine` (thật là `redis:7-alpine`)
+  - [C8] docs/SRS.md:206 Phiên bản React sai: `React 18` (thật là React 19)
+  - [C8] docs/SRS.md:206 Phiên bản Vite sai: `Vite 5` (thật là Vite 8)
+[C9] ĐẠT
+
+[C10] Phát hiện 38 lỗi:
+  - [C9] docs/SRS.md:17 Số lượng Jira tasks sai: 49/49 Jira (tổng số ticket thật là 37)
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-13`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-14`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-15`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-16`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-17`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-18`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-19`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-20`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-21`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-22`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-23`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-24`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-25`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-26`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-27`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-28`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-29`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-30`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-31`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-32`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-33`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-34`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-35`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-36`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-37`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-38`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-39`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-40`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-41`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-42`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-43`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-44`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-45`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-46`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-47`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-48`
+  - [C10] docs/SRS.md:0 Thiếu ticket Jira trong bảng ma trận: `SCRUM-49`
+
+[C11] Phát hiện 1 lỗi:
+  - [C11] docs/SRS.md:0 Không tìm thấy bảng trích dẫn yêu cầu nguồn DB-01...DB-19
+
+[C12] Phát hiện 95 lỗi:
+  - [C12] docs/SRS.md:315 FR-01 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:315 FR-01 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:315 FR-01 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:315 FR-01 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:325 FR-02 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:325 FR-02 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:325 FR-02 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:325 FR-02 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:342 FR-03 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:342 FR-03 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:342 FR-03 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:342 FR-03 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:354 FR-04 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:354 FR-04 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:354 FR-04 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:354 FR-04 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:363 FR-05 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:363 FR-05 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:363 FR-05 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:363 FR-05 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:375 FR-06 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:375 FR-06 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:375 FR-06 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:375 FR-06 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:386 FR-07 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:386 FR-07 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:386 FR-07 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:386 FR-07 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:399 FR-08 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:399 FR-08 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:399 FR-08 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:399 FR-08 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:411 FR-09 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:411 FR-09 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:411 FR-09 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:411 FR-09 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:417 FR-10 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:417 FR-10 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:417 FR-10 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:417 FR-10 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:424 FR-11 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:424 FR-11 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:424 FR-11 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:435 FR-12 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:435 FR-12 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:435 FR-12 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:435 FR-12 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:444 FR-13 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:444 FR-13 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:444 FR-13 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:503 FR-14 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:503 FR-14 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:503 FR-14 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:511 FR-15 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:511 FR-15 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:511 FR-15 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:521 FR-16 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:521 FR-16 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:521 FR-16 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:521 FR-16 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:533 FR-17 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:533 FR-17 thiếu mục **Mô tả**
+  - [C12] docs/SRS.md:533 FR-17 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:533 FR-17 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:545 FR-18 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:545 FR-18 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:545 FR-18 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:586 FR-19 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:586 FR-19 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:586 FR-19 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:600 FR-20 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:600 FR-20 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:600 FR-20 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:603 FR-21 thiếu thuộc tính: {'nguồn', 'ưu tiên', 'test case', 'phụ trách', 'kiểm chứng'}
+  - [C12] docs/SRS.md:603 FR-21 thiếu mục **Tiêu chí chấp nhận**
+  - [C12] docs/SRS.md:603 FR-21 tiêu chí chấp nhận thiếu từ khóa 'Thì'
+  - [C12] docs/SRS.md:0 Yêu cầu DB-01 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-02 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-03 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-04 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-05 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-06 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-07 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-08 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-09 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-10 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-11 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-12 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-13 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-14 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-15 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-16 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-17 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-18 chưa được khối yêu cầu nào trỏ tới
+  - [C12] docs/SRS.md:0 Yêu cầu DB-19 chưa được khối yêu cầu nào trỏ tới
+
+-------------------------------------------------------
+Kết quả: 176 lỗi / 12 phép kiểm.

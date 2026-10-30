@@ -28,10 +28,10 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/posts/:id" element={<PostDetailPage />} />
-            <Route path="/posts/new" element={<CreateEditPostPage />} />
             <Route path="/posts/:id/edit" element={<CreateEditPostPage />} />
             <Route path="/benchmark" element={<BenchmarkPage />} />
             <Route element={<RequireAdmin />}>
+              <Route path="/posts/new" element={<CreateEditPostPage />} />
               <Route path="/admin/posts" element={<AdminPostsPage />} />
               <Route path="/admin/sessions" element={<AdminSessionsPage />} />
             </Route>

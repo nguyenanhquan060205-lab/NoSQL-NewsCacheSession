@@ -45,8 +45,10 @@ Session: `session:{sessionId}` — **Hash**, TTL 30 phút sliding. Hash chứ kh
 String JSON, vì đề bài yêu cầu rõ *"dùng cấu trúc Hashes lưu Session người dùng"* và
 vì cần `HSET` riêng field `lastActive` mà không đọc–ghi lại cả phiên.
 
-Field trong Hash session: `userId`, `username`, `loginAt` (SV2 ghi khi tạo phiên) +
-`role`, `lastActive` (SV1 ghi qua `CurrentUserService.TouchAsync`).
+Field trong Hash session: `userId`, `username`, `role`, `loginAt`, `lastActive` — ghi cùng lúc
+trong **một** `MULTI/EXEC` khi đăng nhập (`AuthController.Login` → `RedisSessionService.CreateSessionAsync`).
+`lastActive` được cập nhật mỗi request bởi middleware (cùng transaction với `EXPIRE`);
+`CurrentUserService.TouchAsync` chỉ còn dùng để bổ sung `role` cho phiên tạo bởi bản code cũ.
 
 ## Xác thực & phân quyền
 
@@ -77,8 +79,14 @@ context.Items["LoginAt"]  = session["loginAt"];  // tuỳ chọn
   `posts:cat:{categoryId}:p{page}:v{ver}` với `ver` đọc từ `posts:ver`. Create/Update/
   Delete đã `INCR posts:ver` sẵn, nên chỉ cần đọc đúng số phiên bản là invalidation tự
   hoạt động — không cần thêm method nào vào `ICacheService`.
-- **Lock chống stampede bắt buộc có `PX`**: `SET lock:post:{id} 1 NX PX 5000`. Không có
-  TTL thì tiến trình giữ khóa chết giữa đường sẽ chặn mọi request sau vĩnh viễn.
+- **Lock chống stampede bắt buộc có TTL**: `LockTakeAsync` gửi `SET lock:post:{id} <token> NX EX 5`,
+  giải phóng bằng `LockReleaseAsync` (chỉ xóa khi đúng token). Không có TTL thì tiến trình giữ
+  khóa chết giữa đường sẽ chặn mọi request sau vĩnh viễn. Request không giành được khóa chờ tối
+  đa 40 × 50ms rồi đọc thẳng MongoDB — **không** quay lại đệ quy vô hạn.
+- **Redis có thể sập**: `ICacheService.GetAsync` trả null (coi như MISS), Set/Remove bỏ qua;
+  thao tác cần giá trị thật (lock, bộ đếm, phiên) ném lỗi để `RedisUnavailableMiddleware` trả 503.
+  Gọi Redis trực tiếp trong code mới thì kiểm `RedisAvailability.EnsureConnected` trước, nếu không
+  request sẽ treo 5 giây trong backlog của thư viện.
 - **Không xóa `post:{id}:views` khi xóa mềm bài viết.** Xóa mềm nghĩa là bài có thể
   phục hồi, và lượt xem là số liệu tích lũy — phải để job flush chốt về MongoDB trước.
 - **Soft delete lọc bằng `Ne(p => p.IsDeleted, true)`**, không phải `Eq(..., false)` —
@@ -104,9 +112,13 @@ sáu việc đều đã hiện thực xong, **đừng làm lại**:
 ## Test
 
 ```bash
-dotnet test                                                    # toàn bộ, dùng mock — không cần Redis/Mongo chạy
+dotnet test                                                    # unit test dùng mock; integration test tự Skipped
 dotnet test --filter FullyQualifiedName~PostsControllerCacheAsideTests
+NEWS_IT=1 dotnet test                                          # thêm integration test qua HTTP thật (cần container QA, xem README)
 ```
+
+Integration test nằm ở `tests/NewsCacheSession.Tests/Integration/` (`NewsApiFactory`): chỉ dùng DB
+`newsdb_it_*` và Redis DB 15 — sửa luồng cache/phiên/CRUD thì chạy `NEWS_IT=1` trước khi commit.
 
 ⚠️ `tests/NewsCacheSession.Tests.csproj` nhắm `net10.0` còn API nhắm `net8.0`. Máy chỉ
 có SDK 9 sẽ **fail ngay lúc build** (`NETSDK1045`) — đây là lệch TargetFramework,

@@ -9,44 +9,97 @@ public class RedisSettings
 
 public class RedisCacheService : ICacheService
 {
+    private readonly IConnectionMultiplexer _redis;
     private readonly IDatabase _db;
+    private readonly ILogger<RedisCacheService> _logger;
     private static long _hits;
     private static long _misses;
 
-    public RedisCacheService(IConnectionMultiplexer redis)
+    public RedisCacheService(IConnectionMultiplexer redis, ILogger<RedisCacheService> logger)
     {
+        _redis = redis;
         _db = redis.GetDatabase();
+        _logger = logger;
     }
 
+    // Cache chỉ là bản sao của MongoDB: Redis sập thì coi như MISS để request đọc thẳng DB gốc,
+    // thay vì kéo cả trang chủ/trang chi tiết sập theo.
     public async Task<string?> GetAsync(string key)
     {
-        var value = await _db.StringGetAsync(key);
-        return value.HasValue ? value.ToString() : null;
+        try
+        {
+            RedisAvailability.EnsureConnected(_redis);
+            var value = await _db.StringGetAsync(key);
+            return value.HasValue ? value.ToString() : null;
+        }
+        catch (Exception ex) when (RedisAvailability.IsOutage(ex))
+        {
+            _logger.LogWarning("Redis không sẵn sàng, đọc {Key} coi như MISS: {Error}", key, ex.Message);
+            return null;
+        }
     }
 
+    // Ghi/xóa cache lỗi thì bỏ qua: bản cache (nếu còn) tự hết hạn theo TTL.
     public async Task SetAsync(string key, string value, TimeSpan ttl)
     {
-        await _db.StringSetAsync(key, value, ttl);
+        try
+        {
+            RedisAvailability.EnsureConnected(_redis);
+            await _db.StringSetAsync(key, value, ttl);
+        }
+        catch (Exception ex) when (RedisAvailability.IsOutage(ex))
+        {
+            _logger.LogError("Redis không sẵn sàng, bỏ qua ghi cache {Key}: {Error}", key, ex.Message);
+        }
     }
 
     public async Task RemoveAsync(string key)
     {
-        await _db.KeyDeleteAsync(key);
+        try
+        {
+            RedisAvailability.EnsureConnected(_redis);
+            await _db.KeyDeleteAsync(key);
+        }
+        catch (Exception ex) when (RedisAvailability.IsOutage(ex))
+        {
+            _logger.LogError("Redis không sẵn sàng, không xóa được cache {Key} — bản cũ sống tối đa hết TTL: {Error}",
+                key, ex.Message);
+        }
     }
 
+    // Các thao tác dưới đây cần giá trị thật từ Redis (bộ đếm, lock) nên vẫn ném lỗi —
+    // RedisUnavailableMiddleware đổi lỗi này thành 503.
     public async Task<long> IncrementAsync(string key)
     {
+        RedisAvailability.EnsureConnected(_redis);
         return await _db.StringIncrementAsync(key);
+    }
+
+    public async Task<bool> SetIfNotExistsAsync(string key, string value)
+    {
+        RedisAvailability.EnsureConnected(_redis);
+        return await _db.StringSetAsync(key, value, when: When.NotExists);
     }
 
     public async Task<bool> AcquireLockAsync(string key, string value, TimeSpan expiry)
     {
+        RedisAvailability.EnsureConnected(_redis);
         return await _db.LockTakeAsync(key, value, expiry);
     }
 
     public async Task<bool> ReleaseLockAsync(string key, string value)
     {
-        return await _db.LockReleaseAsync(key, value);
+        try
+        {
+            RedisAvailability.EnsureConnected(_redis);
+            return await _db.LockReleaseAsync(key, value);
+        }
+        catch (Exception ex) when (RedisAvailability.IsOutage(ex))
+        {
+            // Lock có TTL nên tự hết hạn; không được làm hỏng response đã đọc xong từ MongoDB.
+            _logger.LogWarning("Redis không sẵn sàng, để lock {Key} tự hết hạn: {Error}", key, ex.Message);
+            return false;
+        }
     }
 
     public void RecordLookup(bool hit)
@@ -68,12 +121,14 @@ public class RedisCacheService : ICacheService
 
     public async Task MarkDirtyViewAsync(string postId)
     {
+        RedisAvailability.EnsureConnected(_redis);
         await _db.SetAddAsync("posts:dirty_views", postId);
     }
 
     public async Task<List<string>> GetAndClearDirtyViewsAsync()
     {
         const string setKey = "posts:dirty_views";
+        RedisAvailability.EnsureConnected(_redis);
 
         // SPOP lấy và xóa trong cùng một lệnh nguyên tử. SMEMBERS rồi DEL thì ID nào được SADD
         // chen vào giữa hai lệnh sẽ bị xóa mất dấu mà chưa kịp đồng bộ về MongoDB.

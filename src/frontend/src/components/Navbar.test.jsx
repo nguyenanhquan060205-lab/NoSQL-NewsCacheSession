@@ -32,6 +32,22 @@ describe('Navbar', () => {
     expect(screen.queryByRole('link', { name: 'Quản lý phiên' })).not.toBeInTheDocument();
   });
 
+  it('chỉ admin thấy nút Viết bài', () => {
+    useAuth.mockReturnValue({ status: 'authenticated', user: { role: 'admin' } });
+    const { unmount } = render(<MemoryRouter><Navbar /></MemoryRouter>);
+    expect(screen.getByRole('link', { name: 'Viết bài' })).toHaveAttribute('href', '/posts/new');
+    unmount();
+
+    useAuth.mockReturnValue({ status: 'authenticated', user: { role: 'user' } });
+    const { unmount: unmountUser } = render(<MemoryRouter><Navbar /></MemoryRouter>);
+    expect(screen.queryByRole('link', { name: 'Viết bài' })).not.toBeInTheDocument();
+    unmountUser();
+
+    useAuth.mockReturnValue({ status: 'unauthenticated', user: null });
+    render(<MemoryRouter><Navbar /></MemoryRouter>);
+    expect(screen.queryByRole('link', { name: 'Viết bài' })).not.toBeInTheDocument();
+  });
+
   it('đăng xuất qua API, xóa auth state và điều hướng về trang chủ', async () => {
     const user = userEvent.setup();
     const clearAuth = vi.fn();

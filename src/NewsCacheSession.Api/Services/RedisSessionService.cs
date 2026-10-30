@@ -4,17 +4,23 @@ namespace NewsCacheSession.Api.Services;
 
 public class RedisSessionService : ISessionService
 {
+    private readonly IConnectionMultiplexer _redis;
     private readonly IDatabase _db;
 
     public RedisSessionService(IConnectionMultiplexer redis)
     {
+        _redis = redis;
         _db = redis.GetDatabase();
     }
 
     private static string Key(string sessionId) => $"session:{sessionId}";
 
+    // Mọi thao tác kiểm tra kết nối trước (RedisAvailability): middleware gọi GetSessionAsync cho
+    // MỌI request có cookie, nên nếu để thư viện xếp hàng chờ 5 giây thì cả trang công khai cũng treo.
+
     public async Task CreateSessionAsync(string sessionId, string userId, string username, string role, TimeSpan ttl)
     {
+        RedisAvailability.EnsureConnected(_redis);
         var key = Key(sessionId);
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
         var entries = new HashEntry[]
@@ -25,8 +31,13 @@ public class RedisSessionService : ISessionService
             new("loginAt", now),
             new("lastActive", now)
         };
-        await _db.HashSetAsync(key, entries);
-        await _db.KeyExpireAsync(key, ttl);
+
+        // HSET + EXPIRE trong một MULTI/EXEC: gửi hai lệnh rời thì tiến trình chết giữa chừng
+        // để lại một Hash không TTL, nằm vĩnh viễn trong Redis.
+        var tran = _db.CreateTransaction();
+        _ = tran.HashSetAsync(key, entries);
+        _ = tran.KeyExpireAsync(key, ttl);
+        await tran.ExecuteAsync();
     }
 
     public Task CreateSessionAsync(string sessionId, string userId, string username, TimeSpan ttl) =>
@@ -34,6 +45,7 @@ public class RedisSessionService : ISessionService
 
     public async Task<Dictionary<string, string>?> GetSessionAsync(string sessionId)
     {
+        RedisAvailability.EnsureConnected(_redis);
         var key = Key(sessionId);
         var entries = await _db.HashGetAllAsync(key);
         if (entries.Length == 0) return null;
@@ -42,6 +54,7 @@ public class RedisSessionService : ISessionService
 
     public async Task RefreshSessionAsync(string sessionId, TimeSpan ttl)
     {
+        RedisAvailability.EnsureConnected(_redis);
         var key = Key(sessionId);
 
         // Gia hạn TTL + ghi lastActive trong một transaction, chỉ chạy khi key còn tồn tại:
@@ -56,6 +69,7 @@ public class RedisSessionService : ISessionService
 
     public async Task RemoveSessionAsync(string sessionId)
     {
+        RedisAvailability.EnsureConnected(_redis);
         await _db.KeyDeleteAsync(Key(sessionId));
     }
 }

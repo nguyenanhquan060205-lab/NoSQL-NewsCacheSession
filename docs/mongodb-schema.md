@@ -1,6 +1,7 @@
 # Thiết kế schema MongoDB
 
-Database `newsdb` dùng 3 collection: `users`, `categories`, `posts`.
+Database `newsdb` dùng 3 collection dữ liệu: `users`, `categories`, `posts`, cộng collection
+kỹ thuật `meta` (chốt quyền admin đầu tiên — xem mục `users`).
 
 ## Quy ước đặt tên field
 
@@ -32,6 +33,15 @@ PascalCase). Lý do:
 `"admin"`** (bootstrap admin) — nhờ vậy luôn có ít nhất một người quản trị mà không phải
 chèn tay vào DB, cũng không để lọ mật khẩu admin trong file cấu hình (vịn của cách
 seed sẵn tài khoản admin/admin123).
+
+"Đầu tiên" được chốt **nguyên tử**: request đăng ký thấy chưa có admin nào phải insert thêm document
+`{ "_id": "bootstrapAdmin", "username": ..., "claimedAt": ... }` vào collection `meta`. `_id` cố định
+nên chỉ đúng một request insert được; các request chen vào cùng lúc nhận lỗi trùng khóa và thành
+user thường. (Cách cũ — đếm `users` rồi insert — cho 10/10 request song song cùng thành admin.)
+Không dùng partial unique index trên `role: "admin"` vì DB demo đã có sẵn 2 admin.
+
+> ⚠️ Reset dữ liệu thì drop **cả** `meta`: `db.users.drop(); db.meta.drop()`. Chỉ drop `users`
+> mà còn `meta` thì không ai đăng ký được làm admin nữa.
 
 Muốn cấp quyền admin cho người khác về sau:
 

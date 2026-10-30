@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using NewsCacheSession.Api.Middleware;
 using NewsCacheSession.Api.Services;
@@ -28,7 +29,7 @@ public class SessionExpiryTests
     public async Task SessionExpiry_WhenSessionExpiredInRedis_ShouldNotPopulateContextItems()
     {
         // Arrange
-        var middleware = new SessionAuthMiddleware(_ => Task.CompletedTask);
+        var middleware = new SessionAuthMiddleware(_ => Task.CompletedTask, NullLogger<SessionAuthMiddleware>.Instance);
         var context = new DefaultHttpContext();
         context.Request.Headers["X-Session-Id"] = "expired-session-id";
 
@@ -49,7 +50,7 @@ public class SessionExpiryTests
     public async Task SessionSliding_WhenActiveUserSendsRequest_ShouldExtendTtlBy30Minutes()
     {
         // Arrange
-        var middleware = new SessionAuthMiddleware(_ => Task.CompletedTask);
+        var middleware = new SessionAuthMiddleware(_ => Task.CompletedTask, NullLogger<SessionAuthMiddleware>.Instance);
         var context = new DefaultHttpContext();
         context.Request.Headers["X-Session-Id"] = "active-session-id";
 

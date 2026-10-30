@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using NewsCacheSession.Api.Middleware;
 using NewsCacheSession.Api.Services;
@@ -36,7 +37,7 @@ public class SessionAuthMiddlewareTests
     public async Task InvokeAsync_WithValidCookieSession_ShouldPopulateItemsAndRefreshTtl()
     {
         // Arrange
-        var middleware = new SessionAuthMiddleware(NextDelegate);
+        var middleware = new SessionAuthMiddleware(NextDelegate, NullLogger<SessionAuthMiddleware>.Instance);
         var context = new DefaultHttpContext();
         context.Request.Headers["Cookie"] = "SessionId=valid-sess-123";
 
@@ -68,7 +69,7 @@ public class SessionAuthMiddlewareTests
     public async Task InvokeAsync_WithValidHeaderSession_ShouldPopulateItems()
     {
         // Arrange
-        var middleware = new SessionAuthMiddleware(NextDelegate);
+        var middleware = new SessionAuthMiddleware(NextDelegate, NullLogger<SessionAuthMiddleware>.Instance);
         var context = new DefaultHttpContext();
         context.Request.Headers["X-Session-Id"] = "header-sess-456";
 
@@ -97,7 +98,7 @@ public class SessionAuthMiddlewareTests
     public async Task InvokeAsync_WithoutSession_ShouldContinueWithoutPopulatingItems()
     {
         // Arrange
-        var middleware = new SessionAuthMiddleware(NextDelegate);
+        var middleware = new SessionAuthMiddleware(NextDelegate, NullLogger<SessionAuthMiddleware>.Instance);
         var context = new DefaultHttpContext();
 
         // Act
