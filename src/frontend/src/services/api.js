@@ -102,6 +102,24 @@ export const postsApi = {
     api.post(`/posts/${id}/view`),
 };
 
+// ========== BENCHMARK API ==========
+// Trang đo hiệu năng so hai đường đọc cùng một bài: Cache-Aside theo {id} và đọc
+// thẳng MongoDB theo {slug} (endpoint slug cố ý không cache). Trang chi tiết bài
+// viết vẫn phải dùng getById.
+
+export const benchmarkApi = {
+  findBySlug: (slug) =>
+    api.get(`/posts/slug/${encodeURIComponent(slug)}`),
+
+  withRedis: async (id) =>
+    readCacheStatus((await api.get(`/posts/${id}`)).headers),
+
+  withoutRedis: async (slug) => {
+    await api.get(`/posts/slug/${encodeURIComponent(slug)}`);
+    return 'MONGO';
+  },
+};
+
 // ========== CATEGORIES API ==========
 
 export const categoriesApi = {

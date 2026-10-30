@@ -132,6 +132,18 @@ export default function Navbar() {
                 </Link>
               </>
             ) : null}
+            <Link
+              to="/benchmark"
+              aria-label="Đo hiệu năng"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2.5 text-sm font-bold text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-red-700 sm:px-3"
+            >
+              <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <path d="M3 13a9 9 0 0 1 18 0" />
+                <path d="m12 13 4-4" />
+                <path d="M3 17h18" />
+              </svg>
+              <span className="hidden xl:inline">Đo hiệu năng</span>
+            </Link>
             {user ? (
               <>
                 <span className="hidden max-w-32 truncate text-sm font-semibold text-zinc-600 xl:inline" title={user.username}>
