@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Benchmark NewsCacheSession · 2026-10-25-chinh-thuc</title>
+<style>
+:root{--font-anthropic-sans:"Segoe UI",Roboto,Arial,sans-serif;--font-anthropic-serif:Georgia,"Noto Serif","Times New Roman",serif;
+--cds-font-size-caption:.8125rem;--cds-font-size-body:.9375rem;--cds-font-size-heading:1.0625rem;--cds-font-size-title:2rem;--cds-font-weight-medium:600;
+--cds-gap-xs:.25rem;--cds-gap-sm:.5rem;--cds-gap-md:1rem;--cds-gap-lg:1.5rem;--cds-gap-xl:2.25rem;
+--cds-pad-xs:.25rem;--cds-pad-sm:.5rem;--cds-pad-md:1rem;--cds-pad-lg:1.25rem;--cds-radius:8px;--cds-dur-slow:.3s;
+--color-bg:#f6f6f4;--color-panel:#ffffff;--color-fg:#1c1c1a;--color-fg-muted:#6b6a64;--color-border-line:#e3e2dc;
+--color-ok:#2f7d4f;--color-warn:#a8660b;--color-bad:#c0392b;
+--cds-chart-grid:#ecebe6;--cds-chart-axis:#b9b7ae;--cds-chart-reference:#8f8d84;
+--cds-surface-popover:#ffffff;--cds-border:#dddcd5;--cds-shadow-popover:0 4px 16px rgba(0,0,0,.12);--cds-text-secondary:#6b6a64;
+--s1:#c2410c;--s2:#2563eb;--s3:#9ca3af}
+@media (prefers-color-scheme:dark){:root{--color-bg:#161615;--color-panel:#1f1f1d;--color-fg:#ecebe6;--color-fg-muted:#a3a29b;--color-border-line:#33322f;
+--color-ok:#5fbf86;--color-warn:#e0a24a;--color-bad:#f07167;--cds-chart-grid:#2b2a27;--cds-chart-axis:#55534d;--cds-chart-reference:#77756d;
+--cds-surface-popover:#262624;--cds-border:#3a3936;--cds-shadow-popover:0 4px 16px rgba(0,0,0,.5);--cds-text-secondary:#a3a29b;
+--s1:#fb923c;--s2:#60a5fa;--s3:#8b8f97;color-scheme:dark}}
+body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(--font-anthropic-sans)}
+#dash-root{padding:2rem max(16px,4vw) 3rem}
+.dash-skeleton{color:transparent}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const DATA = {"lat": [{"loai": "khong-cache", "ten": "Không cache (MongoDB)", "n": 200, "mean": 3.659985, "median": 3.5905, "p95": 4.457000000000001, "p99": 4.6335, "min": 2.883, "max": 4.888, "stdev": 0.4043655925486069}, {"loai": "cache-miss", "ten": "Cache MISS (MongoDB → Redis)", "n": 200, "mean": 8.73866, "median": 8.571, "p95": 10.4233, "p99": 10.904089999999997, "min": 7.306, "max": 12.187, "stdev": 0.8405114226816263}, {"loai": "cache-hit", "ten": "Cache HIT (Redis)", "n": 200, "mean": 2.960645, "median": 2.9240000000000004, "p95": 3.55145, "p99": 3.8196199999999996, "min": 2.307, "max": 4.06, "stdev": 0.3469083828700708}], "raw": [{"round": "1", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "khong-cache", "ms": "4.233", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-miss", "ms": "10.836", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-hit", "ms": "3.663", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "khong-cache", "ms": "4.374", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-miss", "ms": "10.195", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-hit", "ms": "3.491", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "khong-cache", "ms": "4.514", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-miss", "ms": "9.314", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-hit", "ms": "3.365", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "khong-cache", "ms": "4.476", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-miss", "ms": "10.653", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-hit", "ms": "3.425", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "khong-cache", "ms": "4.231", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-miss", "ms": "10.467", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-hit", "ms": "3.167", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "khong-cache", "ms": "3.291", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-miss", "ms": "10.182", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-hit", "ms": "3.326", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "khong-cache", "ms": "3.848", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-miss", "ms": "8.679", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-hit", "ms": "3.333", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "khong-cache", "ms": "4.026", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-miss", "ms": "8.527", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-hit", "ms": "3.193", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "khong-cache", "ms": "3.408", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-miss", "ms": "8.377", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-hit", "ms": "3.227", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "khong-cache", "ms": "3.846", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-miss", "ms": "9.321", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-hit", "ms": "3.421", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "khong-cache", "ms": "3.386", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-miss", "ms": "8.723", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-hit", "ms": "2.938", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46210", "loai": "khong-cache", "ms": "3.656", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-miss", "ms": "10.341", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-hit", "ms": "2.841", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "khong-cache", "ms": "3.897", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-miss", "ms": "8.418", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-hit", "ms": "3.011", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "khong-cache", "ms": "4.159", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-miss", "ms": "9.185", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-hit", "ms": "3.717", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46230", "loai": "khong-cache", "ms": "4.023", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-miss", "ms": "10.498", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-hit", "ms": "3.255", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "khong-cache", "ms": "4.586", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-miss", "ms": "9.601", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-hit", "ms": "3.48", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "khong-cache", "ms": "4.168", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-miss", "ms": "10.902", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-hit", "ms": "4.06", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46211", "loai": "khong-cache", "ms": "4.026", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-miss", "ms": "10.796", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-hit", "ms": "2.665", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46231", "loai": "khong-cache", "ms": "3.404", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-miss", "ms": "8.478", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-hit", "ms": "2.641", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "khong-cache", "ms": "3.99", "status": "200", "xCache": "", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-miss", "ms": "7.787", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "1", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-hit", "ms": "2.631", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "khong-cache", "ms": "3.26", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-miss", "ms": "10.08", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-hit", "ms": "2.922", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "khong-cache", "ms": "3.465", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-miss", "ms": "7.578", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-hit", "ms": "2.677", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "khong-cache", "ms": "3.851", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-miss", "ms": "7.306", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-hit", "ms": "2.625", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "khong-cache", "ms": "3.481", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-miss", "ms": "8.556", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-hit", "ms": "2.946", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "khong-cache", "ms": "3.679", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-miss", "ms": "8.03", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-hit", "ms": "2.475", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "khong-cache", "ms": "3.829", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-miss", "ms": "7.727", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-hit", "ms": "2.735", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "khong-cache", "ms": "3.3", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-miss", "ms": "8.298", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-hit", "ms": "2.793", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "khong-cache", "ms": "3.554", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-miss", "ms": "8.419", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-hit", "ms": "2.815", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "khong-cache", "ms": "3.544", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-miss", "ms": "7.924", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-hit", "ms": "2.639", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "khong-cache", "ms": "3.311", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-miss", "ms": "7.645", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-hit", "ms": "2.523", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "khong-cache", "ms": "3.462", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-miss", "ms": "8.396", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-hit", "ms": "2.718", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46210", "loai": "khong-cache", "ms": "3.399", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-miss", "ms": "8.404", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-hit", "ms": "2.98", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "khong-cache", "ms": "4.068", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-miss", "ms": "8.893", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-hit", "ms": "2.965", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "khong-cache", "ms": "3.895", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-miss", "ms": "8.708", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-hit", "ms": "2.863", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46230", "loai": "khong-cache", "ms": "3.983", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-miss", "ms": "8.288", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-hit", "ms": "2.802", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "khong-cache", "ms": "3.918", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-miss", "ms": "9.15", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-hit", "ms": "3.12", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "khong-cache", "ms": "4.683", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-miss", "ms": "8.04", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-hit", "ms": "3.31", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46211", "loai": "khong-cache", "ms": "3.515", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-miss", "ms": "8.373", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-hit", "ms": "2.954", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46231", "loai": "khong-cache", "ms": "3.665", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-miss", "ms": "8.587", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-hit", "ms": "2.787", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "khong-cache", "ms": "4.283", "status": "200", "xCache": "", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-miss", "ms": "11.111", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "2", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-hit", "ms": "3.171", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "khong-cache", "ms": "3.97", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-miss", "ms": "7.951", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-hit", "ms": "3.356", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "khong-cache", "ms": "3.456", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-miss", "ms": "8.756", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-hit", "ms": "2.883", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "khong-cache", "ms": "3.994", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-miss", "ms": "9.368", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-hit", "ms": "2.82", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "khong-cache", "ms": "3.686", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-miss", "ms": "8.863", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-hit", "ms": "2.949", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "khong-cache", "ms": "3.668", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-miss", "ms": "9.313", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-hit", "ms": "3.462", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "khong-cache", "ms": "3.679", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-miss", "ms": "8.674", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-hit", "ms": "3.197", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "khong-cache", "ms": "3.451", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-miss", "ms": "8.654", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-hit", "ms": "3.414", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "khong-cache", "ms": "3.77", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-miss", "ms": "9.44", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-hit", "ms": "2.573", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "khong-cache", "ms": "3.732", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-miss", "ms": "8.029", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-hit", "ms": "2.96", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "khong-cache", "ms": "3.449", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-miss", "ms": "8.437", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-hit", "ms": "3.171", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "khong-cache", "ms": "3.532", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-miss", "ms": "8.992", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-hit", "ms": "2.454", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46210", "loai": "khong-cache", "ms": "3.327", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-miss", "ms": "7.835", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-hit", "ms": "3.288", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "khong-cache", "ms": "3.501", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-miss", "ms": "8.32", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-hit", "ms": "2.572", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "khong-cache", "ms": "4.288", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-miss", "ms": "9.533", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-hit", "ms": "2.839", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46230", "loai": "khong-cache", "ms": "4.133", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-miss", "ms": "10.421", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-hit", "ms": "3.101", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "khong-cache", "ms": "4.029", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-miss", "ms": "7.892", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-hit", "ms": "2.691", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "khong-cache", "ms": "3.678", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-miss", "ms": "8.642", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-hit", "ms": "2.576", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46211", "loai": "khong-cache", "ms": "3.856", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-miss", "ms": "7.937", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-hit", "ms": "2.525", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46231", "loai": "khong-cache", "ms": "3.493", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-miss", "ms": "8.52", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-hit", "ms": "2.838", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "khong-cache", "ms": "3.379", "status": "200", "xCache": "", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-miss", "ms": "7.7", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "3", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-hit", "ms": "2.831", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "khong-cache", "ms": "3.609", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-miss", "ms": "8.371", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-hit", "ms": "3.202", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "khong-cache", "ms": "3.943", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-miss", "ms": "7.99", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-hit", "ms": "2.926", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "khong-cache", "ms": "4.05", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-miss", "ms": "9.019", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-hit", "ms": "2.645", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "khong-cache", "ms": "4.416", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-miss", "ms": "9.419", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-hit", "ms": "3.065", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "khong-cache", "ms": "3.787", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-miss", "ms": "9.014", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-hit", "ms": "2.951", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "khong-cache", "ms": "4.571", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-miss", "ms": "7.738", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-hit", "ms": "3.222", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "khong-cache", "ms": "3.492", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-miss", "ms": "8.57", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-hit", "ms": "2.399", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "khong-cache", "ms": "3.554", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-miss", "ms": "8.051", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-hit", "ms": "2.587", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "khong-cache", "ms": "3.364", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-miss", "ms": "7.926", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-hit", "ms": "2.453", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "khong-cache", "ms": "3.593", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-miss", "ms": "7.992", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-hit", "ms": "2.721", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "khong-cache", "ms": "4.198", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-miss", "ms": "7.867", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-hit", "ms": "2.529", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46210", "loai": "khong-cache", "ms": "3.783", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-miss", "ms": "8.653", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-hit", "ms": "2.626", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "khong-cache", "ms": "3.273", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-miss", "ms": "7.871", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-hit", "ms": "2.417", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "khong-cache", "ms": "3.481", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-miss", "ms": "9.859", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-hit", "ms": "3.143", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46230", "loai": "khong-cache", "ms": "3.713", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-miss", "ms": "7.503", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-hit", "ms": "2.473", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "khong-cache", "ms": "3.185", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-miss", "ms": "8.427", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-hit", "ms": "2.307", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "khong-cache", "ms": "3.822", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-miss", "ms": "7.651", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-hit", "ms": "3.209", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46211", "loai": "khong-cache", "ms": "3.363", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-miss", "ms": "8.939", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-hit", "ms": "2.349", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46231", "loai": "khong-cache", "ms": "3.606", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-miss", "ms": "8.037", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-hit", "ms": "2.814", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "khong-cache", "ms": "3.034", "status": "200", "xCache": "", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-miss", "ms": "8.143", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "4", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-hit", "ms": "2.705", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "khong-cache", "ms": "3.821", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-miss", "ms": "9.198", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-hit", "ms": "2.948", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "khong-cache", "ms": "3.1", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-miss", "ms": "8.335", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-hit", "ms": "2.732", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "khong-cache", "ms": "2.982", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-miss", "ms": "7.678", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-hit", "ms": "2.512", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "khong-cache", "ms": "3.161", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-miss", "ms": "8.771", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-hit", "ms": "3.078", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "khong-cache", "ms": "3.417", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-miss", "ms": "10.044", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-hit", "ms": "2.959", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "khong-cache", "ms": "3.394", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-miss", "ms": "8.979", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-hit", "ms": "2.752", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "khong-cache", "ms": "3.974", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-miss", "ms": "9.151", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-hit", "ms": "2.958", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "khong-cache", "ms": "3.099", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-miss", "ms": "8.251", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-hit", "ms": "2.872", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "khong-cache", "ms": "3.294", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-miss", "ms": "8.863", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-hit", "ms": "2.899", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "khong-cache", "ms": "3.214", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-miss", "ms": "8.98", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-hit", "ms": "3.59", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "khong-cache", "ms": "3.547", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-miss", "ms": "8.213", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-hit", "ms": "3.405", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46210", "loai": "khong-cache", "ms": "3.332", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-miss", "ms": "8.752", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-hit", "ms": "2.944", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "khong-cache", "ms": "3.701", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-miss", "ms": "7.637", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-hit", "ms": "2.426", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "khong-cache", "ms": "2.883", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-miss", "ms": "8.774", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-hit", "ms": "2.875", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46230", "loai": "khong-cache", "ms": "3.206", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-miss", "ms": "8.312", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-hit", "ms": "2.665", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "khong-cache", "ms": "3.47", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-miss", "ms": "10.802", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-hit", "ms": "2.795", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "khong-cache", "ms": "3.397", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-miss", "ms": "9.135", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-hit", "ms": "2.774", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46211", "loai": "khong-cache", "ms": "3.575", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-miss", "ms": "9.019", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-hit", "ms": "2.737", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46231", "loai": "khong-cache", "ms": "3.529", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-miss", "ms": "8.471", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-hit", "ms": "2.61", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "khong-cache", "ms": "3.381", "status": "200", "xCache": "", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-miss", "ms": "8.898", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "5", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-hit", "ms": "2.806", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "khong-cache", "ms": "3.02", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-miss", "ms": "7.718", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-hit", "ms": "2.743", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "khong-cache", "ms": "2.98", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-miss", "ms": "7.593", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-hit", "ms": "2.747", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "khong-cache", "ms": "3.588", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-miss", "ms": "8.503", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-hit", "ms": "2.654", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "khong-cache", "ms": "3.104", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-miss", "ms": "8.276", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-hit", "ms": "2.81", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "khong-cache", "ms": "3.386", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-miss", "ms": "8.341", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-hit", "ms": "2.575", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "khong-cache", "ms": "3.148", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-miss", "ms": "8.974", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-hit", "ms": "2.814", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "khong-cache", "ms": "3.318", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-miss", "ms": "9.661", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-hit", "ms": "3.267", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "khong-cache", "ms": "4.096", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-miss", "ms": "10.147", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-hit", "ms": "3.73", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "khong-cache", "ms": "3.785", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-miss", "ms": "8.071", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-hit", "ms": "2.597", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "khong-cache", "ms": "3.503", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-miss", "ms": "9.402", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-hit", "ms": "3.444", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "khong-cache", "ms": "3.964", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-miss", "ms": "9.911", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-hit", "ms": "3.174", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46210", "loai": "khong-cache", "ms": "4.355", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-miss", "ms": "9.434", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-hit", "ms": "2.38", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "khong-cache", "ms": "3.317", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-miss", "ms": "8.247", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-hit", "ms": "3.103", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "khong-cache", "ms": "3.302", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-miss", "ms": "8.962", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-hit", "ms": "3.063", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46230", "loai": "khong-cache", "ms": "3.276", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-miss", "ms": "8.864", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-hit", "ms": "2.826", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "khong-cache", "ms": "3.551", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-miss", "ms": "9.879", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-hit", "ms": "2.819", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "khong-cache", "ms": "3.443", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-miss", "ms": "7.834", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-hit", "ms": "2.87", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46211", "loai": "khong-cache", "ms": "3.284", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-miss", "ms": "8.115", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-hit", "ms": "2.605", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46231", "loai": "khong-cache", "ms": "3.631", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-miss", "ms": "8.421", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-hit", "ms": "2.947", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "khong-cache", "ms": "3.076", "status": "200", "xCache": "", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-miss", "ms": "8.072", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "6", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-hit", "ms": "2.727", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "khong-cache", "ms": "3.487", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-miss", "ms": "8.932", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-hit", "ms": "3.55", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "khong-cache", "ms": "3.439", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-miss", "ms": "9.051", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-hit", "ms": "3.014", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "khong-cache", "ms": "3.147", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-miss", "ms": "7.954", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-hit", "ms": "2.666", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "khong-cache", "ms": "3.954", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-miss", "ms": "8.402", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-hit", "ms": "2.673", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "khong-cache", "ms": "3.527", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-miss", "ms": "7.843", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-hit", "ms": "2.615", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "khong-cache", "ms": "3.416", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-miss", "ms": "9.345", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-hit", "ms": "2.464", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "khong-cache", "ms": "3.264", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-miss", "ms": "9.094", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-hit", "ms": "2.974", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "khong-cache", "ms": "3.312", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-miss", "ms": "8.854", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-hit", "ms": "3.109", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "khong-cache", "ms": "3.449", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-miss", "ms": "7.445", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-hit", "ms": "2.753", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "khong-cache", "ms": "3.452", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-miss", "ms": "8.389", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-hit", "ms": "2.927", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "khong-cache", "ms": "3.086", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-miss", "ms": "7.753", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-hit", "ms": "3.292", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46210", "loai": "khong-cache", "ms": "3.456", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-miss", "ms": "8.106", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-hit", "ms": "2.877", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "khong-cache", "ms": "3.628", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-miss", "ms": "7.475", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-hit", "ms": "3.048", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "khong-cache", "ms": "3.924", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-miss", "ms": "9.546", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-hit", "ms": "3.276", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46230", "loai": "khong-cache", "ms": "3.98", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-miss", "ms": "8.975", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-hit", "ms": "3.881", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "khong-cache", "ms": "4.538", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-miss", "ms": "10.842", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-hit", "ms": "3.142", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "khong-cache", "ms": "4.03", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-miss", "ms": "9.858", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-hit", "ms": "2.729", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46211", "loai": "khong-cache", "ms": "3.838", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-miss", "ms": "8.572", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-hit", "ms": "3.3", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46231", "loai": "khong-cache", "ms": "4.282", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-miss", "ms": "9.084", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-hit", "ms": "3.427", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "khong-cache", "ms": "3.78", "status": "200", "xCache": "", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-miss", "ms": "8.953", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "7", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-hit", "ms": "3.465", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "khong-cache", "ms": "3.902", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-miss", "ms": "8.298", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-hit", "ms": "2.838", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "khong-cache", "ms": "3.783", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-miss", "ms": "8.756", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-hit", "ms": "3.581", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "khong-cache", "ms": "4.24", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-miss", "ms": "9.274", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-hit", "ms": "3.132", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "khong-cache", "ms": "4.375", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-miss", "ms": "8.628", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-hit", "ms": "3.179", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "khong-cache", "ms": "3.958", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-miss", "ms": "8.813", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-hit", "ms": "3.579", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "khong-cache", "ms": "4.043", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-miss", "ms": "10.101", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-hit", "ms": "3.407", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "khong-cache", "ms": "4.596", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-miss", "ms": "10.373", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-hit", "ms": "3.423", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "khong-cache", "ms": "4.527", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-miss", "ms": "10.243", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-hit", "ms": "3.425", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "khong-cache", "ms": "4.456", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-miss", "ms": "12.187", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-hit", "ms": "3.462", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "khong-cache", "ms": "4.888", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-miss", "ms": "9.202", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-hit", "ms": "3.5", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "khong-cache", "ms": "4.212", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-miss", "ms": "7.599", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-hit", "ms": "3.064", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46210", "loai": "khong-cache", "ms": "4.06", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-miss", "ms": "9.131", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-hit", "ms": "2.977", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "khong-cache", "ms": "3.796", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-miss", "ms": "8.237", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-hit", "ms": "2.605", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "khong-cache", "ms": "4.181", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-miss", "ms": "7.804", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-hit", "ms": "3.234", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46230", "loai": "khong-cache", "ms": "3.139", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-miss", "ms": "8.366", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-hit", "ms": "2.884", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "khong-cache", "ms": "3.543", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-miss", "ms": "8.364", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-hit", "ms": "2.753", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "khong-cache", "ms": "2.924", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-miss", "ms": "8.611", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-hit", "ms": "2.918", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46211", "loai": "khong-cache", "ms": "3.916", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-miss", "ms": "8.031", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-hit", "ms": "2.948", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46231", "loai": "khong-cache", "ms": "3.415", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-miss", "ms": "7.558", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-hit", "ms": "2.661", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "khong-cache", "ms": "3.234", "status": "200", "xCache": "", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-miss", "ms": "7.999", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "8", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-hit", "ms": "2.548", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "khong-cache", "ms": "3.922", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-miss", "ms": "7.617", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-hit", "ms": "2.472", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "khong-cache", "ms": "3.438", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-miss", "ms": "8.093", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-hit", "ms": "2.737", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "khong-cache", "ms": "3.694", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-miss", "ms": "7.85", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-hit", "ms": "2.577", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "khong-cache", "ms": "3.15", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-miss", "ms": "9.39", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-hit", "ms": "3.263", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "khong-cache", "ms": "3.655", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-miss", "ms": "8.272", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-hit", "ms": "2.903", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "khong-cache", "ms": "3.405", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-miss", "ms": "8.821", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-hit", "ms": "2.537", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "khong-cache", "ms": "3.65", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-miss", "ms": "8.743", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-hit", "ms": "2.508", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "khong-cache", "ms": "3.621", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-miss", "ms": "8.033", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-hit", "ms": "2.658", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "khong-cache", "ms": "3.025", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-miss", "ms": "8.261", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-hit", "ms": "2.444", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "khong-cache", "ms": "3.307", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-miss", "ms": "10.053", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-hit", "ms": "3.279", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "khong-cache", "ms": "3.594", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-miss", "ms": "9.65", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-hit", "ms": "3.193", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46210", "loai": "khong-cache", "ms": "4.108", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-miss", "ms": "8.558", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-hit", "ms": "2.615", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "khong-cache", "ms": "4.633", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-miss", "ms": "9.27", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-hit", "ms": "3.132", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "khong-cache", "ms": "3.419", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-miss", "ms": "9.264", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-hit", "ms": "3.277", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46230", "loai": "khong-cache", "ms": "3.464", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-miss", "ms": "8.804", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-hit", "ms": "3.207", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "khong-cache", "ms": "3.687", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-miss", "ms": "8.504", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-hit", "ms": "2.787", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "khong-cache", "ms": "3.254", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-miss", "ms": "8.385", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-hit", "ms": "2.554", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46211", "loai": "khong-cache", "ms": "3.321", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-miss", "ms": "8.919", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-hit", "ms": "2.887", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46231", "loai": "khong-cache", "ms": "3.308", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-miss", "ms": "9.336", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-hit", "ms": "3.819", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "khong-cache", "ms": "3.361", "status": "200", "xCache": "", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-miss", "ms": "8.35", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "9", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-hit", "ms": "2.386", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "khong-cache", "ms": "3.6", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-miss", "ms": "8.992", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f0", "loai": "cache-hit", "ms": "3.33", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "khong-cache", "ms": "3.558", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-miss", "ms": "9.521", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622c", "loai": "cache-hit", "ms": "3.275", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "khong-cache", "ms": "3.352", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-miss", "ms": "8.436", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b4", "loai": "cache-hit", "ms": "2.98", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "khong-cache", "ms": "3.063", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-miss", "ms": "8.786", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f1", "loai": "cache-hit", "ms": "2.881", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "khong-cache", "ms": "3.928", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-miss", "ms": "8.236", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f2", "loai": "cache-hit", "ms": "3.64", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "khong-cache", "ms": "3.606", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-miss", "ms": "8.704", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4620e", "loai": "cache-hit", "ms": "3.248", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "khong-cache", "ms": "4.026", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-miss", "ms": "8.067", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622d", "loai": "cache-hit", "ms": "3.391", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "khong-cache", "ms": "3.236", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-miss", "ms": "7.897", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622e", "loai": "cache-hit", "ms": "3.179", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "khong-cache", "ms": "3.477", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-miss", "ms": "8.283", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461d2", "loai": "cache-hit", "ms": "2.806", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "khong-cache", "ms": "3.136", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-miss", "ms": "8.412", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b5", "loai": "cache-hit", "ms": "3.33", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "khong-cache", "ms": "3.701", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-miss", "ms": "8.226", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4620f", "loai": "cache-hit", "ms": "2.635", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46210", "loai": "khong-cache", "ms": "3.421", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-miss", "ms": "8.118", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46210", "loai": "cache-hit", "ms": "3.164", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "khong-cache", "ms": "3.412", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-miss", "ms": "8.471", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d4622f", "loai": "cache-hit", "ms": "3.317", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "khong-cache", "ms": "3.374", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-miss", "ms": "8.588", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b6", "loai": "cache-hit", "ms": "3.284", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46230", "loai": "khong-cache", "ms": "3.074", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-miss", "ms": "8.125", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46230", "loai": "cache-hit", "ms": "2.739", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "khong-cache", "ms": "3.916", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-miss", "ms": "8.357", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b7", "loai": "cache-hit", "ms": "3.03", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "khong-cache", "ms": "3.325", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-miss", "ms": "8.862", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461f3", "loai": "cache-hit", "ms": "2.571", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46211", "loai": "khong-cache", "ms": "3.824", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-miss", "ms": "8.39", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46211", "loai": "cache-hit", "ms": "2.981", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46231", "loai": "khong-cache", "ms": "3.887", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-miss", "ms": "9.095", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d46231", "loai": "cache-hit", "ms": "3.119", "status": "200", "xCache": "HIT", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "khong-cache", "ms": "3.689", "status": "200", "xCache": "", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-miss", "ms": "8.147", "status": "200", "xCache": "MISS", "valid": "True"}, {"round": "10", "postId": "6ac6bf1b5cdee79754d461b8", "loai": "cache-hit", "ms": "2.549", "status": "200", "xCache": "HIT", "valid": "True"}], "env": [{"measuredAt": "2026-10-25T05:11:59+00:00", "totalItems": 10150, "posts": 20, "rounds": 10, "warmup": 5, "loadRequests": 500, "stampedeRequests": 50, "stampedeTrials": 5, "cpuCount": 16, "os": "Windows-11-10.0.26200-SP0", "gitCommit": "bab6a5c"}], "load": [{"loai": "cache-hit", "concurrency": "1", "requests": "500", "errors": "0", "seconds": "1.524", "rps": "328.1", "p50": "2.985", "p95": "3.719", "p99": "4.228"}, {"loai": "khong-cache", "concurrency": "1", "requests": "500", "errors": "0", "seconds": "1.792", "rps": "279.0", "p50": "3.546", "p95": "4.292", "p99": "4.713"}, {"loai": "cache-hit", "concurrency": "10", "requests": "500", "errors": "0", "seconds": "0.562", "rps": "889.4", "p50": "10.388", "p95": "16.377", "p99": "24.223"}, {"loai": "khong-cache", "concurrency": "10", "requests": "500", "errors": "0", "seconds": "0.571", "rps": "875.5", "p50": "10.975", "p95": "15.475", "p99": "16.986"}, {"loai": "cache-hit", "concurrency": "50", "requests": "500", "errors": "0", "seconds": "0.565", "rps": "885.6", "p50": "51.068", "p95": "87.25", "p99": "106.81"}, {"loai": "khong-cache", "concurrency": "50", "requests": "500", "errors": "0", "seconds": "0.656", "rps": "762.5", "p50": "59.595", "p95": "98.869", "p99": "116.096"}], "stampede": [{"lan": 1, "postId": "6ac6bf1b5cdee79754d461f0", "requests": 50, "miss": 1, "hit": 49, "errors": 0, "median": 50.740499995299615, "p95": 57.98328000237234, "max": 59.1201000061119}, {"lan": 2, "postId": "6ac6bf1b5cdee79754d4622c", "requests": 50, "miss": 1, "hit": 49, "errors": 0, "median": 53.05149999912828, "p95": 104.25516999675892, "max": 105.45630000706296}, {"lan": 3, "postId": "6ac6bf1b5cdee79754d461b4", "requests": 50, "miss": 1, "hit": 49, "errors": 0, "median": 50.145250010245945, "p95": 104.60767000768101, "max": 105.22979999950621}, {"lan": 4, "postId": "6ac6bf1b5cdee79754d461f1", "requests": 50, "miss": 1, "hit": 49, "errors": 0, "median": 50.42094999953406, "p95": 59.5147299929522, "max": 60.42979999620002}, {"lan": 5, "postId": "6ac6bf1b5cdee79754d461f2", "requests": 50, "miss": 1, "hit": 49, "errors": 0, "median": 69.1274999990128, "p95": 115.10234999659588, "max": 116.1802999995416}], "cachestats": [{"thoiDiem": "truoc", "hits": 234, "misses": 17, "totalRequests": 251, "hitRate": 93.23}, {"thoiDiem": "sau", "hits": 2246, "misses": 227, "totalRequests": 2473, "hitRate": 90.82}]};
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const draws = {};
+const onDataFns = [];
+window.dash = {
+  get colors() { return ['--s1', '--s2', '--s3'].map(css); },
+  data: (id) => (id in DATA ? {status: 'ok', data: DATA[id], columns: Object.keys(DATA[id][0] || {})} : {status: 'missing', data: []}),
+  calc: (id, {inputs, fn}) => { DATA[id] = fn(...inputs.map((i) => DATA[i] || [])); },
+  onData: (fn) => onDataFns.push(fn),
+  draw: (name, fn) => { draws[name] = fn; },
+};
+function drawAll() {
+  onDataFns.forEach((fn) => fn());
+  document.querySelectorAll('[data-draw]').forEach((el) => draws[el.dataset.draw]?.(el));
+}
+window.addEventListener('DOMContentLoaded', () => {
+  if (!window.d3) {
+    document.getElementById('dash-root').prepend(Object.assign(document.createElement('p'), {
+      textContent: 'Không tải được thư viện d3 — cần kết nối mạng để vẽ biểu đồ.', style: 'color:var(--color-bad)'}));
+    return;
+  }
+  drawAll();
+  let width = innerWidth;
+  addEventListener('resize', () => { if (innerWidth !== width) { width = innerWidth; drawAll(); } });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawAll);
+});
+</script>
+</head>
+<body>
+<div id="dash-root">
+<style>
+.bm{max-width:1200px;margin-inline:auto;display:flex;flex-direction:column;gap:var(--cds-gap-xl);font-family:var(--font-anthropic-sans)}
+.bm-head h1{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);line-height:1.15;margin:0;text-wrap:balance}
+.bm-take{font-size:var(--cds-font-size-body);line-height:1.55;max-width:70ch;margin:var(--cds-gap-sm) 0 0}
+.bm-meta{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin:var(--cds-gap-xs) 0 0;font-variant-numeric:tabular-nums}
+.bm .bm-take b,.bm .bm-tile b,.bm .bm-meta b,.bm .note b{font-weight:600;font-variant-numeric:tabular-nums}
+.bm-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:var(--cds-gap-md)}
+.bm-tile{background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-md);display:flex;flex-direction:column;gap:var(--cds-gap-xs);min-width:0}
+.bm-tile .lab{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);display:flex;align-items:center;gap:.4rem}
+.bm-tile .num{font-family:var(--font-anthropic-serif);font-weight:400;font-size:var(--cds-font-size-title);line-height:1.1;font-variant-numeric:tabular-nums}
+.bm-tile .unit{font-family:var(--font-anthropic-sans);font-size:var(--cds-font-size-body);color:var(--color-fg-muted);margin-left:.25em}
+.bm-tile .sub{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.bm .good{color:var(--color-ok)}
+.bm-sec{display:flex;flex-direction:column;gap:var(--cds-gap-md)}
+.bm-sec>h2{font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium);margin:0}
+.bm-sec>.note{max-width:75ch}
+.bm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr));gap:var(--cds-gap-md)}
+.bm-card{background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-lg);display:flex;flex-direction:column;gap:var(--cds-gap-sm);min-width:0}
+.bm-card h3{font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium);margin:0}
+.bm .note{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin:0;line-height:1.5}
+.bm-legend{display:flex;flex-wrap:wrap;gap:var(--cds-gap-sm) var(--cds-gap-md);font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);list-style:none;margin:0;padding:0}
+.bm-legend li{display:flex;align-items:center;gap:.35rem}
+.bm .sw{display:inline-block;width:.6rem;height:.6rem;border-radius:2px;flex:none}
+.bm .sw.tick{width:2px;height:.75rem;border-radius:0;background:var(--color-fg)}
+.bm .sw.rng{width:.9rem;height:2px;border-radius:0;background:var(--cds-chart-axis)}
+.bm-chart{position:relative;min-height:190px}
+.bm-chart.tall{min-height:240px}
+.bm-chart svg{display:block;overflow:visible}
+.bm-tip{position:absolute;z-index:3;pointer-events:none;background:var(--cds-surface-popover);border:1px solid var(--cds-border);border-radius:var(--cds-radius);box-shadow:var(--cds-shadow-popover);padding:var(--cds-pad-xs) var(--cds-pad-sm);font-size:var(--cds-font-size-caption);white-space:nowrap;font-variant-numeric:tabular-nums}
+.bm-tip .h{color:var(--cds-text-secondary);margin-bottom:2px}
+.bm-tip .l{display:flex;align-items:center;gap:.4rem}
+.bm-tip .v{margin-left:auto;padding-left:.8rem;font-weight:600}
+.bm-fail{display:flex;align-items:center;justify-content:center;gap:.45rem;min-height:inherit;color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.bm-fail::before{content:"";width:.375rem;height:.375rem;border-radius:50%;background:var(--color-bad)}
+.bm-tablewrap{overflow-x:auto}
+.bm table{border-collapse:collapse;width:100%;font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums}
+.bm th,.bm td{padding:var(--cds-pad-xs) var(--cds-pad-sm);text-align:right;border-bottom:1px solid var(--color-border-line);white-space:nowrap}
+.bm th{color:var(--color-fg-muted);font-weight:var(--cds-font-weight-medium)}
+.bm th:first-child,.bm td:first-child{text-align:left}
+.bm td .sw{margin-right:.4rem;vertical-align:-1px}
+.bm [data-dash-source-state=empty]{color:transparent}
+.bm [data-dash-source-state=refreshing]{opacity:.5;transition:opacity var(--cds-dur-slow)}
+.bm code{font-size:.92em}
+</style>
+
+<div class="bm">
+  <header class="bm-head" id="tong-quan">
+    <h1>Hiệu năng Cache-Aside với Redis</h1>
+    <p class="bm-take">Đọc bài viết từ Redis (Cache HIT) có trung vị <b data-draw="t-hit" data-source="lat" data-field="median" data-where="loai=cache-hit">—</b> ms: nhanh gấp <b data-draw="t-miss" data-source="tyle" data-field="missOverHit" data-row="0">—</b> lần lượt nạp cache đầu tiên (MISS) và gấp <b data-draw="t-nc" data-source="tyle" data-field="noCacheOverHit" data-row="0">—</b> lần đọc thẳng MongoDB. Khi nhiều request cùng lao vào một bài vừa mất cache, khóa phân tán chỉ cho <b data-draw="t-stmiss" data-source="stampedeTong" data-field="miss" data-row="0">—</b> trên <b data-draw="t-streq" data-source="stampedeTong" data-field="requests" data-row="0">—</b> request xuống MongoDB.</p>
+    <p class="bm-meta">Đo ngày <span data-draw="m-date" data-source="env" data-field="measuredAt" data-row="0">—</span> · <span data-draw="m-n" data-source="lat" data-field="n" data-where="loai=cache-hit">—</span> mẫu mỗi loại · <span data-draw="m-items" data-source="env" data-field="totalItems" data-row="0">—</span> bài viết trong MongoDB · API, MongoDB và Redis chạy trên cùng một máy (<span data-draw="m-cpu" data-source="env" data-field="cpuCount" data-row="0">—</span> luồng CPU) · commit <span data-draw="m-git" data-source="env" data-field="gitCommit" data-row="0">—</span></p>
+  </header>
+
+  <section class="bm-tiles" aria-label="Chỉ số chính">
+    <div class="bm-tile">
+      <div class="lab"><i class="sw" data-k="cache-hit"></i>Cache HIT, trung vị</div>
+      <div class="num"><span data-draw="k-hit" data-source="lat" data-field="median" data-where="loai=cache-hit">—</span><span class="unit">ms</span></div>
+      <div class="sub">p95 <b data-draw="k-hit95" data-source="lat" data-field="p95" data-where="loai=cache-hit">—</b> ms</div>
+    </div>
+    <div class="bm-tile">
+      <div class="lab"><i class="sw" data-k="khong-cache"></i>Không cache, trung vị</div>
+      <div class="num"><span data-draw="k-nc" data-source="lat" data-field="median" data-where="loai=khong-cache">—</span><span class="unit">ms</span></div>
+      <div class="sub">p95 <b data-draw="k-nc95" data-source="lat" data-field="p95" data-where="loai=khong-cache">—</b> ms</div>
+    </div>
+    <div class="bm-tile">
+      <div class="lab"><i class="sw" data-k="cache-miss"></i>Cache MISS, trung vị</div>
+      <div class="num"><span data-draw="k-miss" data-source="lat" data-field="median" data-where="loai=cache-miss">—</span><span class="unit">ms</span></div>
+      <div class="sub">p95 <b data-draw="k-miss95" data-source="lat" data-field="p95" data-where="loai=cache-miss">—</b> ms</div>
+    </div>
+    <div class="bm-tile">
+      <div class="lab">Stampede: request xuống MongoDB</div>
+      <div class="num"><span data-draw="k-stmiss" data-source="stampedeTong" data-field="miss" data-row="0">—</span><span class="unit">/ <span data-draw="k-streq" data-source="stampedeTong" data-field="requests" data-row="0">—</span></span></div>
+      <div class="sub">qua <b data-draw="k-sttr" data-source="stampedeTong" data-field="trials" data-row="0">—</b> lần thử, <b data-draw="k-sterr" data-source="stampedeTong" data-field="errors" data-row="0">—</b> lỗi</div>
+    </div>
+    <div class="bm-tile">
+      <div class="lab">Thông lượng Cache HIT ở tải cao nhất</div>
+      <div class="num"><span data-draw="k-rps" data-source="tai" data-field="hitRps" data-row="0">—</span><span class="unit">req/s</span></div>
+      <div class="sub"><b data-draw="k-gain" data-source="tai" data-field="gain" data-row="0">—</b> so với không cache, ở <b data-draw="k-conc" data-source="tai" data-field="concurrency" data-row="0">—</b> luồng</div>
+    </div>
+    <div class="bm-tile">
+      <div class="lab">Tỷ lệ HIT sau đợt đo</div>
+      <div class="num"><span data-draw="k-rate" data-source="cachestats" data-field="hitRate" data-where="thoiDiem=sau">—</span><span class="unit">%</span></div>
+      <div class="sub">trên <b data-draw="k-total" data-source="cachestats" data-field="totalRequests" data-where="thoiDiem=sau">—</b> lượt tra cache</div>
+    </div>
+  </section>
+
+  <section class="bm-sec" id="do-tre">
+    <h2>Độ trễ tuần tự của <code>GET</code> một bài viết</h2>
+    <p class="note">Mỗi lượt, script lấy <b data-draw="e-posts" data-source="env" data-field="posts" data-row="0">—</b> bài và với từng bài gọi lần lượt: <code>/api/posts/slug/{slug}</code> (không cache), xóa key <code>post:{id}</code> rồi gọi <code>/api/posts/{id}</code> (MISS), gọi lại ngay (HIT). Lặp <b data-draw="e-rounds" data-source="env" data-field="rounds" data-row="0">—</b> lượt sau <b data-draw="e-warm" data-source="env" data-field="warmup" data-row="0">—</b> lượt khởi động. Mỗi mẫu đều được kiểm header <code>X-Cache</code>.</p>
+    <ul class="bm-legend">
+      <li><i class="sw" data-k="cache-hit"></i>Cache HIT (Redis)</li>
+      <li><i class="sw" data-k="khong-cache"></i>Không cache (MongoDB)</li>
+      <li><i class="sw" data-k="cache-miss"></i>Cache MISS (MongoDB → Redis)</li>
+    </ul>
+    <div class="bm-grid">
+      <div class="bm-card" id="chart-tomtat">
+        <h3>Trung vị, p95 và khoảng dao động</h3>
+        <ul class="bm-legend"><li><i class="sw"></i>Thanh: trung vị</li><li><i class="sw tick"></i>Vạch: p95</li><li><i class="sw rng"></i>Nhỏ nhất đến lớn nhất</li></ul>
+        <div class="bm-chart" data-draw="c-tomtat" data-source="lat"></div>
+        <p class="note">MISS chậm hơn cả không cache vì phải đọc MongoDB, lấy khóa <code>lock:post:{id}</code> rồi ghi lại vào Redis. Chi phí đó chỉ trả một lần cho mỗi 10 phút TTL.</p>
+      </div>
+      <div class="bm-card" id="chart-phanbo">
+        <h3>Phân bố từng mẫu đo</h3>
+        <p class="note">Mỗi chấm là một request. Vạch đậm là trung vị của loại đó.</p>
+        <div class="bm-chart" data-draw="c-phanbo" data-source="raw"></div>
+      </div>
+    </div>
+    <div class="bm-card" id="chart-theoluot">
+      <h3>Trung vị theo từng lượt đo</h3>
+      <p class="note">Ba đường giữ thứ tự ổn định qua mọi lượt, nên chênh lệch không đến từ một lượt bất thường.</p>
+      <div class="bm-chart" data-draw="c-theoluot" data-source="theoLuot"></div>
+    </div>
+  </section>
+
+  <section class="bm-sec" id="tai-dong-thoi">
+    <h2>Tải đồng thời</h2>
+    <p class="note">Mỗi mức gửi <b data-draw="e-loadreq" data-source="env" data-field="loadRequests" data-row="0">—</b> request chia đều cho các luồng. Cache HIT gọi <code>/api/posts/{id}</code> trên một bài đã nóng, không cache gọi <code>/api/posts/slug/{slug}</code> của cùng bài.</p>
+    <ul class="bm-legend">
+      <li><i class="sw" data-k="cache-hit"></i>Cache HIT (Redis)</li>
+      <li><i class="sw" data-k="khong-cache"></i>Không cache (MongoDB)</li>
+    </ul>
+    <div class="bm-grid">
+      <div class="bm-card" id="chart-rps">
+        <h3>Request mỗi giây</h3>
+        <p class="note">Cao hơn là tốt hơn.</p>
+        <div class="bm-chart tall" data-draw="c-rps" data-source="load"></div>
+      </div>
+      <div class="bm-card" id="chart-p95">
+        <h3>Độ trễ p95 theo số luồng</h3>
+        <p class="note">Thấp hơn là tốt hơn. Trục ngang theo thang log.</p>
+        <div class="bm-chart tall" data-draw="c-p95" data-source="load"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bm-sec" id="stampede">
+    <h2>Chống cache stampede</h2>
+    <p class="note">Mỗi lần thử xóa <code>post:{id}</code> của một bài khác nhau rồi bắn <b data-draw="e-streq" data-source="env" data-field="stampedeRequests" data-row="0">—</b> request cùng lúc. Request giữ được khóa <code>SET NX PX 5000</code> đọc MongoDB, các request còn lại chờ và đọc lại từ Redis.</p>
+    <div class="bm-card" id="chart-stampede">
+      <h3>Request theo kết quả trong mỗi lần thử</h3>
+      <ul class="bm-legend">
+        <li><i class="sw" data-k="cache-miss"></i>MISS (đọc MongoDB)</li>
+        <li><i class="sw" data-k="cache-hit"></i>HIT (chờ khóa rồi đọc Redis)</li>
+      </ul>
+      <div class="bm-chart" data-draw="c-stampede" data-source="stampede"></div>
+      <p class="note">Số bên phải là độ trễ p95 của cả nhóm request trong lần thử đó, gồm cả thời gian chờ khóa.</p>
+    </div>
+  </section>
+
+  <section class="bm-sec" id="bang-so-lieu">
+    <h2>Bảng số liệu</h2>
+    <div class="bm-card">
+      <h3>Độ trễ tuần tự (ms)</h3>
+      <div class="bm-tablewrap">
+        <table data-source="lat" data-row-key="loai">
+          <thead><tr><th data-field="ten">Loại</th><th data-field="n">n</th><th data-field="mean">Trung bình</th><th data-field="median">Trung vị</th><th data-field="p95">p95</th><th data-field="p99">p99</th><th data-field="min">Nhỏ nhất</th><th data-field="max">Lớn nhất</th></tr></thead>
+          <tbody data-draw="tb-lat"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="bm-card">
+      <h3>Tải đồng thời</h3>
+      <div class="bm-tablewrap">
+        <table data-source="load" data-row-key="loai,concurrency">
+          <thead><tr><th data-field="loai">Loại</th><th data-field="concurrency">Luồng</th><th data-field="requests">Request</th><th data-field="errors">Lỗi</th><th data-field="rps">Request/giây</th><th data-field="p50">p50 (ms)</th><th data-field="p95">p95 (ms)</th><th data-field="p99">p99 (ms)</th></tr></thead>
+          <tbody data-draw="tb-load"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const vi = d3.formatLocale({decimal: ',', thousands: '.', grouping: [3], currency: ['', '']});
+const F = {
+  ms: vi.format(',.2f'), x: vi.format(',.2f'), int: vi.format(',d'), rps: vi.format(',.1f'),
+  rps0: vi.format(',.0f'), gain: vi.format('+.1%'), tick: vi.format(',~f'), rate: vi.format(',.2f')
+};
+const ORDER = ['cache-hit', 'khong-cache', 'cache-miss'];
+const SHORT = {'cache-hit': 'Cache HIT', 'khong-cache': 'Không cache', 'cache-miss': 'Cache MISS'};
+const col = (k) => dash.colors[Math.max(0, ORDER.indexOf(k))];
+
+// ---- Số liệu tính từ dữ liệu gốc ----
+dash.calc('tyle', {
+  inputs: ['lat'], title: 'Tỷ lệ chênh độ trễ',
+  description: 'Trung vị Cache MISS và Không cache chia cho trung vị Cache HIT.',
+  fn: (lat) => {
+    const med = (k) => Number(lat.find((r) => r.loai === k).median);
+    return [{missOverHit: med('cache-miss') / med('cache-hit'), noCacheOverHit: med('khong-cache') / med('cache-hit')}];
+  }
+});
+dash.calc('tai', {
+  inputs: ['load'], title: 'Thông lượng ở tải cao nhất',
+  description: 'Request/giây của Cache HIT so với Không cache ở mức luồng đồng thời cao nhất.',
+  fn: (load) => {
+    const top = Math.max(...load.map((r) => Number(r.concurrency)));
+    const rps = (k) => Number(load.find((r) => r.loai === k && Number(r.concurrency) === top).rps);
+    return [{concurrency: top, hitRps: rps('cache-hit'), noCacheRps: rps('khong-cache'), gain: rps('cache-hit') / rps('khong-cache') - 1}];
+  }
+});
+dash.calc('stampedeTong', {
+  inputs: ['stampede'], title: 'Tổng hợp cache stampede',
+  description: 'Cộng số request, MISS, HIT và lỗi qua mọi lần thử.',
+  fn: (stampede) => {
+    const sum = (f) => stampede.reduce((a, r) => a + Number(r[f]), 0);
+    return [{trials: stampede.length, requests: sum('requests'), miss: sum('miss'), hit: sum('hit'), errors: sum('errors')}];
+  }
+});
+dash.calc('theoLuot', {
+  inputs: ['raw'], title: 'Trung vị theo lượt đo',
+  description: 'Trung vị độ trễ của các bài trong mỗi lượt, tách theo loại đo; chỉ tính mẫu hợp lệ.',
+  fn: (raw) => {
+    const groups = {};
+    raw.filter((r) => r.valid === 'True').forEach((r) => {
+      const k = r.round + '|' + r.loai;
+      (groups[k] = groups[k] || []).push(Number(r.ms));
+    });
+    return Object.entries(groups).map(([k, v]) => {
+      const [round, loai] = k.split('|');
+      v.sort((a, b) => a - b);
+      const n = v.length;
+      const median = n % 2 ? v[(n - 1) / 2] : (v[n / 2 - 1] + v[n / 2]) / 2;
+      return {round: Number(round), loai, median};
+    });
+  }
+});
+
+// ---- Màu chú thích ----
+dash.onData(() => {
+  document.querySelectorAll('.bm .sw[data-k]').forEach((s) => { s.style.background = col(s.dataset.k); });
+});
+
+// ---- Giá trị đơn ----
+const byKey = (k, v) => (rows) => rows.find((r) => String(r[k]) === v);
+function val(name, src, pick, fmt, after) {
+  dash.draw(name, (el) => {
+    const d = dash.data(src);
+    el.classList.toggle('dash-skeleton', d.status === 'loading');
+    if (d.status !== 'ok') { el.textContent = '—'; return; }
+    const v = pick(d.data);
+    el.textContent = v == null || Number.isNaN(v) ? '—' : fmt(v);
+    if (after) after(el, v);
+  });
+}
+const latF = (k, f) => (rows) => Number((byKey('loai', k)(rows) || {})[f]);
+const one = (f) => (rows) => rows[0] ? Number(rows[0][f]) : NaN;
+val('t-hit', 'lat', latF('cache-hit', 'median'), F.ms);
+val('t-miss', 'tyle', one('missOverHit'), F.x);
+val('t-nc', 'tyle', one('noCacheOverHit'), F.x);
+val('t-stmiss', 'stampedeTong', one('miss'), F.int);
+val('t-streq', 'stampedeTong', one('requests'), F.int);
+val('m-date', 'env', (r) => r[0] ? new Date(r[0].measuredAt) : NaN, d3.utcFormat('%d/%m/%Y'));
+val('m-n', 'lat', latF('cache-hit', 'n'), F.int);
+val('m-items', 'env', one('totalItems'), F.int);
+val('m-cpu', 'env', one('cpuCount'), F.int);
+val('m-git', 'env', (r) => r[0] ? r[0].gitCommit : null, String);
+val('k-hit', 'lat', latF('cache-hit', 'median'), F.ms);
+val('k-hit95', 'lat', latF('cache-hit', 'p95'), F.ms);
+val('k-nc', 'lat', latF('khong-cache', 'median'), F.ms);
+val('k-nc95', 'lat', latF('khong-cache', 'p95'), F.ms);
+val('k-miss', 'lat', latF('cache-miss', 'median'), F.ms);
+val('k-miss95', 'lat', latF('cache-miss', 'p95'), F.ms);
+val('k-stmiss', 'stampedeTong', one('miss'), F.int);
+val('k-streq', 'stampedeTong', one('requests'), F.int);
+val('k-sttr', 'stampedeTong', one('trials'), F.int);
+val('k-sterr', 'stampedeTong', one('errors'), F.int);
+val('k-rps', 'tai', one('hitRps'), F.rps);
+val('k-gain', 'tai', one('gain'), F.gain, (el, v) => el.classList.toggle('good', v > 0));
+val('k-conc', 'tai', one('concurrency'), F.int);
+val('k-rate', 'cachestats', (r) => Number((byKey('thoiDiem', 'sau')(r) || {}).hitRate), F.rate);
+val('k-total', 'cachestats', (r) => Number((byKey('thoiDiem', 'sau')(r) || {}).totalRequests), F.int);
+val('e-posts', 'env', one('posts'), F.int);
+val('e-rounds', 'env', one('rounds'), F.int);
+val('e-warm', 'env', one('warmup'), F.int);
+val('e-loadreq', 'env', one('loadRequests'), F.int);
+val('e-streq', 'env', one('stampedeRequests'), F.int);
+
+// ---- Hỗ trợ vẽ ----
+function ready(el, ids) {
+  el.replaceChildren();
+  const ds = ids.map((id) => dash.data(id));
+  const loading = ds.some((d) => d.status === 'loading');
+  el.classList.toggle('dash-skeleton', loading);
+  if (loading) return null;
+  if (ds.some((d) => d.status !== 'ok')) {
+    const f = document.createElement('div');
+    f.className = 'bm-fail';
+    f.textContent = 'Không tải được dữ liệu';
+    el.appendChild(f);
+    return null;
+  }
+  return ds.map((d) => d.data);
+}
+function svgFor(el, W, H) {
+  return d3.select(el).append('svg').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`);
+}
+function txt(sel) {
+  return sel.attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').style('font-family', 'var(--font-anthropic-sans)');
+}
+function widest(svg, strings) {
+  const t = txt(svg.append('g').attr('opacity', 0)).selectAll('text').data(strings).join('text').text((d) => d);
+  const w = d3.max(t.nodes(), (n) => n.getComputedTextLength()) || 0;
+  t.remove();
+  return w;
+}
+function axisStyle(g) {
+  g.attr('font-size', null).attr('font-family', null);
+  g.select('.domain').remove();
+  g.selectAll('.tick line').attr('stroke', 'var(--cds-chart-grid)');
+  txt(g.selectAll('.tick text'));
+  return g;
+}
+function makeTip(el) {
+  const t = document.createElement('div');
+  t.className = 'bm-tip';
+  t.hidden = true;
+  el.appendChild(t);
+  return {
+    show(x, y, head, lines) {
+      t.replaceChildren();
+      const h = document.createElement('div');
+      h.className = 'h';
+      h.textContent = head;
+      t.appendChild(h);
+      lines.forEach((ln) => {
+        const row = document.createElement('div');
+        row.className = 'l';
+        if (ln.c) { const s = document.createElement('i'); s.className = 'sw'; s.style.background = ln.c; row.appendChild(s); }
+        const a = document.createElement('span'); a.textContent = ln.k; row.appendChild(a);
+        const b = document.createElement('span'); b.className = 'v'; b.textContent = ln.v; row.appendChild(b);
+        t.appendChild(row);
+      });
+      t.hidden = false;
+      const bw = el.clientWidth, tw = t.offsetWidth, th = t.offsetHeight;
+      let left = x + 14;
+      if (left + tw > bw) left = Math.max(0, x - tw - 14);
+      const top = Math.max(0, Math.min(y - th / 2, el.clientHeight - th));
+      t.style.left = left + 'px';
+      t.style.top = top + 'px';
+    },
+    hide() { t.hidden = true; }
+  };
+}
+const pt = (ev, el) => { const r = el.getBoundingClientRect(); return [ev.clientX - r.left, ev.clientY - r.top]; };
+
+// ---- Biểu đồ 1: trung vị + p95 + khoảng ----
+dash.draw('c-tomtat', (el) => {
+  const got = ready(el, ['lat']); if (!got) return;
+  const rows = ORDER.map((k) => got[0].find((r) => r.loai === k)).filter(Boolean)
+    .map((r) => ({k: r.loai, ten: r.ten, n: +r.n, mean: +r.mean, median: +r.median, p95: +r.p95, p99: +r.p99, min: +r.min, max: +r.max}));
+  const W = Math.max(el.clientWidth, 260), H = rows.length * 48 + 28;
+  const svg = svgFor(el, W, H);
+  const lw = widest(svg, rows.map((d) => SHORT[d.k]));
+  const vw = widest(svg, rows.map((d) => F.ms(d.median) + ' ms'));
+  const m = {l: lw + 12, r: vw + 12, t: 4, b: 24};
+  const x = d3.scaleLinear([0, d3.max(rows, (d) => d.max)], [m.l, W - m.r]).nice();
+  const y = d3.scaleBand(rows.map((d) => d.k), [m.t, H - m.b]).padding(0.38);
+  axisStyle(svg.append('g').attr('transform', `translate(0,${H - m.b})`)
+    .call(d3.axisBottom(x).ticks(Math.max(2, Math.floor((W - m.l - m.r) / 64))).tickSize(-(H - m.b - m.t)).tickFormat(F.tick)));
+  svg.append('text').attr('x', W - m.r + 8).attr('y', H - m.b + 16).attr('text-anchor', 'start').text('ms').call(txt);
+  const g = svg.append('g').selectAll('g').data(rows).join('g').attr('transform', (d) => `translate(0,${y(d.k)})`);
+  const bh = y.bandwidth(), cy = bh / 2;
+  txt(g.append('text').attr('x', 0).attr('y', cy).attr('dy', '0.35em').text((d) => SHORT[d.k])).attr('fill', 'var(--color-fg)');
+  g.append('line').attr('x1', (d) => x(d.min)).attr('x2', (d) => x(d.max)).attr('y1', cy).attr('y2', cy)
+    .attr('stroke', 'var(--cds-chart-axis)').attr('stroke-width', 2);
+  g.append('rect').attr('x', x(0)).attr('y', 0).attr('height', bh).attr('width', (d) => Math.max(0, x(d.median) - x(0)))
+    .attr('rx', 3).attr('fill', (d) => col(d.k));
+  g.append('line').attr('x1', (d) => x(d.p95)).attr('x2', (d) => x(d.p95)).attr('y1', -4).attr('y2', bh + 4)
+    .attr('stroke', 'var(--color-fg)').attr('stroke-width', 2);
+  txt(g.append('text').attr('x', (d) => x(d.max) + 6).attr('y', cy).attr('dy', '0.35em').text((d) => F.ms(d.median) + ' ms'))
+    .attr('fill', 'var(--color-fg)');
+  const tip = makeTip(el);
+  g.append('rect').attr('x', 0).attr('y', -6).attr('width', W).attr('height', bh + 12).attr('fill', 'transparent')
+    .on('pointermove', (ev, d) => {
+      const [px, py] = pt(ev, el);
+      tip.show(px, py, d.ten, [
+        {k: 'Trung vị', v: F.ms(d.median) + ' ms', c: col(d.k)},
+        {k: 'Trung bình', v: F.ms(d.mean) + ' ms'}, {k: 'p95', v: F.ms(d.p95) + ' ms'}, {k: 'p99', v: F.ms(d.p99) + ' ms'},
+        {k: 'Nhỏ nhất – lớn nhất', v: F.ms(d.min) + ' – ' + F.ms(d.max) + ' ms'}]);
+    })
+    .on('pointerleave', () => tip.hide());
+});
+
+// ---- Biểu đồ 2: phân bố từng mẫu ----
+dash.draw('c-phanbo', (el) => {
+  const got = ready(el, ['raw']); if (!got) return;
+  const pts = got[0].filter((r) => r.valid === 'True').map((r, i) => ({k: r.loai, ms: +r.ms, round: +r.round, post: r.postId, i}));
+  const keys = ORDER.filter((k) => pts.some((p) => p.k === k));
+  const W = Math.max(el.clientWidth, 260), H = keys.length * 52 + 28;
+  const svg = svgFor(el, W, H);
+  const lw = widest(svg, keys.map((k) => SHORT[k]));
+  const m = {l: lw + 12, r: 30, t: 4, b: 24};
+  const x = d3.scaleLinear([0, d3.max(pts, (p) => p.ms)], [m.l, W - m.r]).nice();
+  const y = d3.scaleBand(keys, [m.t, H - m.b]).padding(0.2);
+  axisStyle(svg.append('g').attr('transform', `translate(0,${H - m.b})`)
+    .call(d3.axisBottom(x).ticks(Math.max(2, Math.floor((W - m.l - m.r) / 64))).tickSize(-(H - m.b - m.t)).tickFormat(F.tick)));
+  svg.append('text').attr('x', W - m.r + 8).attr('y', H - m.b + 16).attr('text-anchor', 'start').text('ms').call(txt);
+  txt(svg.append('g').selectAll('text').data(keys).join('text').attr('x', 0).attr('y', (k) => y(k) + y.bandwidth() / 2)
+    .attr('dy', '0.35em').text((k) => SHORT[k])).attr('fill', 'var(--color-fg)');
+  const jitter = (i) => (((i * 9301 + 49297) % 233280) / 233280 - 0.5) * 0.8;
+  pts.forEach((p) => { p.x = x(p.ms); p.y = y(p.k) + y.bandwidth() / 2 + jitter(p.i) * y.bandwidth(); });
+  svg.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (p) => p.x).attr('cy', (p) => p.y).attr('r', 2.4)
+    .attr('fill', (p) => col(p.k)).attr('fill-opacity', 0.5);
+  svg.append('g').selectAll('line').data(keys).join('line')
+    .attr('x1', (k) => x(d3.median(pts.filter((p) => p.k === k), (p) => p.ms))).attr('x2', (k) => x(d3.median(pts.filter((p) => p.k === k), (p) => p.ms)))
+    .attr('y1', (k) => y(k)).attr('y2', (k) => y(k) + y.bandwidth()).attr('stroke', 'var(--color-fg)').attr('stroke-width', 2);
+  const hl = svg.append('circle').attr('r', 4.5).attr('fill', 'none').attr('stroke', 'var(--color-fg)').attr('stroke-width', 1.5).attr('opacity', 0);
+  const dl = d3.Delaunay.from(pts, (p) => p.x, (p) => p.y);
+  const tip = makeTip(el);
+  svg.on('pointermove', (ev) => {
+    const [px, py] = d3.pointer(ev, svg.node());
+    const p = pts[dl.find(px, py)];
+    if (!p || Math.hypot(p.x - px, p.y - py) > 24) { hl.attr('opacity', 0); tip.hide(); return; }
+    hl.attr('cx', p.x).attr('cy', p.y).attr('opacity', 1);
+    const [ex, ey] = pt(ev, el);
+    tip.show(ex, ey, SHORT[p.k] + ' · lượt ' + p.round, [{k: 'Độ trễ', v: F.ms(p.ms) + ' ms', c: col(p.k)}, {k: 'Bài', v: p.post.slice(-6)}]);
+  }).on('pointerleave', () => { hl.attr('opacity', 0); tip.hide(); });
+});
+
+// ---- Biểu đồ 3: theo lượt ----
+dash.draw('c-theoluot', (el) => {
+  const got = ready(el, ['theoLuot']); if (!got) return;
+  const rows = got[0];
+  const keys = ORDER.filter((k) => rows.some((r) => r.loai === k));
+  const series = keys.map((k) => ({k, pts: rows.filter((r) => r.loai === k).sort((a, b) => a.round - b.round)}));
+  const rounds = [...new Set(rows.map((r) => r.round))].sort((a, b) => a - b);
+  const W = Math.max(el.clientWidth, 260), H = 220;
+  const svg = svgFor(el, W, H);
+  const ends = series.map((s) => SHORT[s.k] + ' ' + F.ms(s.pts[s.pts.length - 1].median));
+  const ew = widest(svg, ends);
+  const yMax = d3.max(rows, (r) => r.median);
+  const yw = widest(svg, [F.tick(Math.ceil(yMax))]);
+  const m = {l: yw + 10, r: ew + 14, t: 10, b: 26};
+  const x = d3.scaleLinear(d3.extent(rounds), [m.l, W - m.r]);
+  const y = d3.scaleLinear([0, yMax], [H - m.b, m.t]).nice();
+  axisStyle(svg.append('g').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - m.l - m.r)).tickFormat(F.tick)));
+  axisStyle(svg.append('g').attr('transform', `translate(0,${H - m.b})`)
+    .call(d3.axisBottom(x).tickValues(rounds.filter((r, i) => W > 420 || i % 2 === 0)).tickSize(0).tickPadding(8).tickFormat((r) => 'Lượt ' + r)));
+  const line = d3.line().x((p) => x(p.round)).y((p) => y(p.median));
+  svg.append('g').selectAll('path').data(series).join('path').attr('d', (s) => line(s.pts)).attr('fill', 'none')
+    .attr('stroke', (s) => col(s.k)).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+  const labs = series.map((s, i) => ({s, text: ends[i], y: y(s.pts[s.pts.length - 1].median)})).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < labs.length; i++) labs[i].y = Math.max(labs[i].y, labs[i - 1].y + 14);
+  txt(svg.append('g').selectAll('text').data(labs).join('text').attr('x', W - m.r + 8).attr('y', (l) => l.y).attr('dy', '0.35em')
+    .text((l) => l.text)).attr('fill', (l) => col(l.s.k));
+  const rule = svg.append('line').attr('y1', m.t).attr('y2', H - m.b).attr('stroke', 'var(--cds-chart-reference)').attr('opacity', 0);
+  const dots = svg.append('g').selectAll('circle').data(series).join('circle').attr('r', 4).attr('fill', (s) => col(s.k)).attr('opacity', 0);
+  const tip = makeTip(el);
+  svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', W - m.l - m.r).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+    .on('pointermove', (ev) => {
+      const [px] = d3.pointer(ev, svg.node());
+      const r = rounds[d3.minIndex(rounds, (v) => Math.abs(x(v) - px))];
+      rule.attr('x1', x(r)).attr('x2', x(r)).attr('opacity', 1);
+      dots.each(function (s) { const p = s.pts.find((q) => q.round === r); d3.select(this).attr('cx', x(r)).attr('cy', p ? y(p.median) : -99).attr('opacity', p ? 1 : 0); });
+      const [ex, ey] = pt(ev, el);
+      tip.show(ex, ey, 'Lượt ' + r, series.map((s) => { const p = s.pts.find((q) => q.round === r); return {k: SHORT[s.k], v: p ? F.ms(p.median) + ' ms' : '—', c: col(s.k)}; }));
+    })
+    .on('pointerleave', () => { rule.attr('opacity', 0); dots.attr('opacity', 0); tip.hide(); });
+});
+
+// ---- Tải đồng thời ----
+const loadRows = (rows) => rows.map((r) => ({k: r.loai, c: +r.concurrency, req: +r.requests, err: +r.errors, rps: +r.rps, p50: +r.p50, p95: +r.p95, p99: +r.p99}));
+const loadTip = (d) => [{k: 'Request/giây', v: F.rps(d.rps), c: col(d.k)}, {k: 'p50', v: F.ms(d.p50) + ' ms'}, {k: 'p95', v: F.ms(d.p95) + ' ms'}, {k: 'p99', v: F.ms(d.p99) + ' ms'}, {k: 'Lỗi', v: F.int(d.err) + ' / ' + F.int(d.req)}];
+
+dash.draw('c-rps', (el) => {
+  const got = ready(el, ['load']); if (!got) return;
+  const rows = loadRows(got[0]);
+  const concs = [...new Set(rows.map((r) => r.c))].sort((a, b) => a - b);
+  const keys = ORDER.filter((k) => rows.some((r) => r.k === k));
+  const W = Math.max(el.clientWidth, 260), H = 240;
+  const svg = svgFor(el, W, H);
+  const yMax = d3.max(rows, (r) => r.rps);
+  const m = {l: widest(svg, [F.tick(Math.ceil(yMax / 100) * 100)]) + 10, r: 4, t: 18, b: 26};
+  const x = d3.scaleBand(concs, [m.l, W - m.r]).padding(0.28);
+  const xs = d3.scaleBand(keys, [0, x.bandwidth()]).padding(0.12);
+  const y = d3.scaleLinear([0, yMax], [H - m.b, m.t]).nice();
+  axisStyle(svg.append('g').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - m.l - m.r)).tickFormat(F.tick)));
+  axisStyle(svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8).tickFormat((c) => c + ' luồng')));
+  const bw = Math.min(32, xs.bandwidth());
+  const bx = (d) => x(d.c) + xs(d.k) + (xs.bandwidth() - bw) / 2;
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', bx).attr('width', bw)
+    .attr('y', (d) => y(d.rps)).attr('height', (d) => y(0) - y(d.rps)).attr('rx', 3).attr('fill', (d) => col(d.k));
+  if (bw >= 22) {
+    txt(svg.append('g').selectAll('text').data(rows).join('text').attr('x', (d) => bx(d) + bw / 2).attr('y', (d) => y(d.rps) - 5)
+      .attr('text-anchor', 'middle').text((d) => F.rps0(d.rps))).attr('fill', 'var(--color-fg)');
+  }
+  const tip = makeTip(el);
+  svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (d) => x(d.c) + xs(d.k)).attr('width', xs.bandwidth())
+    .attr('y', m.t).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+    .on('pointermove', (ev, d) => { const [ex, ey] = pt(ev, el); tip.show(ex, ey, SHORT[d.k] + ' · ' + d.c + ' luồng', loadTip(d)); })
+    .on('pointerleave', () => tip.hide());
+});
+
+dash.draw('c-p95', (el) => {
+  const got = ready(el, ['load']); if (!got) return;
+  const rows = loadRows(got[0]);
+  const concs = [...new Set(rows.map((r) => r.c))].sort((a, b) => a - b);
+  const keys = ORDER.filter((k) => rows.some((r) => r.k === k));
+  const series = keys.map((k) => ({k, pts: rows.filter((r) => r.k === k).sort((a, b) => a.c - b.c)}));
+  const W = Math.max(el.clientWidth, 260), H = 240;
+  const svg = svgFor(el, W, H);
+  const ends = series.map((s) => SHORT[s.k] + ' ' + F.ms(s.pts[s.pts.length - 1].p95));
+  const yMax = d3.max(rows, (r) => r.p95);
+  const m = {l: widest(svg, [F.tick(Math.ceil(yMax / 20) * 20)]) + 10, r: widest(svg, ends) + 14, t: 10, b: 26};
+  const x = d3.scaleLog(d3.extent(concs), [m.l, W - m.r]);
+  const y = d3.scaleLinear([0, yMax], [H - m.b, m.t]).nice();
+  axisStyle(svg.append('g').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - m.l - m.r)).tickFormat(F.tick)));
+  axisStyle(svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).tickValues(concs).tickSize(0).tickPadding(8).tickFormat((c) => c + ' luồng')));
+  const line = d3.line().x((p) => x(p.c)).y((p) => y(p.p95));
+  svg.append('g').selectAll('path').data(series).join('path').attr('d', (s) => line(s.pts)).attr('fill', 'none')
+    .attr('stroke', (s) => col(s.k)).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+  svg.append('g').selectAll('circle').data(rows).join('circle').attr('cx', (d) => x(d.c)).attr('cy', (d) => y(d.p95)).attr('r', 3.5).attr('fill', (d) => col(d.k));
+  const labs = series.map((s, i) => ({s, text: ends[i], y: y(s.pts[s.pts.length - 1].p95)})).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < labs.length; i++) labs[i].y = Math.max(labs[i].y, labs[i - 1].y + 14);
+  txt(svg.append('g').selectAll('text').data(labs).join('text').attr('x', W - m.r + 8).attr('y', (l) => l.y).attr('dy', '0.35em')
+    .text((l) => l.text)).attr('fill', (l) => col(l.s.k));
+  const tip = makeTip(el);
+  const dl = d3.Delaunay.from(rows, (d) => x(d.c), (d) => y(d.p95));
+  svg.on('pointermove', (ev) => {
+    const [px, py] = d3.pointer(ev, svg.node());
+    const d = rows[dl.find(px, py)];
+    if (!d || Math.hypot(x(d.c) - px, y(d.p95) - py) > 40) { tip.hide(); return; }
+    const [ex, ey] = pt(ev, el);
+    tip.show(ex, ey, SHORT[d.k] + ' · ' + d.c + ' luồng', loadTip(d));
+  }).on('pointerleave', () => tip.hide());
+});
+
+// ---- Stampede ----
+dash.draw('c-stampede', (el) => {
+  const got = ready(el, ['stampede']); if (!got) return;
+  const rows = got[0].map((r) => ({lan: +r.lan, post: r.postId, req: +r.requests, miss: +r.miss, hit: +r.hit, err: +r.errors, med: +r.median, p95: +r.p95, max: +r.max}));
+  const W = Math.max(el.clientWidth, 260), H = rows.length * 34 + 26;
+  const svg = svgFor(el, W, H);
+  const lw = widest(svg, rows.map((d) => 'Lần ' + d.lan));
+  const rw = widest(svg, rows.map((d) => 'p95 ' + F.ms(d.p95) + ' ms'));
+  const m = {l: lw + 12, r: rw + 14, t: 2, b: 24};
+  const x = d3.scaleLinear([0, d3.max(rows, (d) => d.req)], [m.l, W - m.r]);
+  const y = d3.scaleBand(rows.map((d) => d.lan), [m.t, H - m.b]).padding(0.3);
+  axisStyle(svg.append('g').attr('transform', `translate(0,${H - m.b})`)
+    .call(d3.axisBottom(x).ticks(5).tickSize(-(H - m.b - m.t)).tickFormat(F.tick)));
+  svg.append('text').attr('x', W - m.r + 8).attr('y', H - m.b + 16).attr('text-anchor', 'start').text('request').call(txt);
+  const g = svg.append('g').selectAll('g').data(rows).join('g').attr('transform', (d) => `translate(0,${y(d.lan)})`);
+  const bh = y.bandwidth();
+  txt(g.append('text').attr('x', 0).attr('y', bh / 2).attr('dy', '0.35em').text((d) => 'Lần ' + d.lan)).attr('fill', 'var(--color-fg)');
+  g.append('rect').attr('x', x(0)).attr('width', (d) => Math.max(0, x(d.miss) - x(0))).attr('height', bh).attr('fill', col('cache-miss'));
+  g.append('rect').attr('x', (d) => x(d.miss)).attr('width', (d) => Math.max(0, x(d.miss + d.hit) - x(d.miss))).attr('height', bh).attr('fill', col('cache-hit')).attr('fill-opacity', 0.85);
+  txt(g.append('text').attr('x', W - m.r + 8).attr('y', bh / 2).attr('dy', '0.35em').text((d) => 'p95 ' + F.ms(d.p95) + ' ms'));
+  const tip = makeTip(el);
+  g.append('rect').attr('x', 0).attr('y', -4).attr('width', W).attr('height', bh + 8).attr('fill', 'transparent')
+    .on('pointermove', (ev, d) => {
+      const [ex, ey] = pt(ev, el);
+      tip.show(ex, ey, 'Lần ' + d.lan + ' · bài …' + d.post.slice(-6), [
+        {k: 'MISS (MongoDB)', v: F.int(d.miss), c: col('cache-miss')}, {k: 'HIT (Redis)', v: F.int(d.hit), c: col('cache-hit')},
+        {k: 'Lỗi', v: F.int(d.err)}, {k: 'Trung vị', v: F.ms(d.med) + ' ms'}, {k: 'p95', v: F.ms(d.p95) + ' ms'}, {k: 'Lớn nhất', v: F.ms(d.max) + ' ms'}]);
+    })
+    .on('pointerleave', () => tip.hide());
+});
+
+// ---- Bảng ----
+function td(tr, text, sw) {
+  const c = document.createElement('td');
+  if (sw) { const s = document.createElement('i'); s.className = 'sw'; s.style.background = sw; c.appendChild(s); }
+  c.appendChild(document.createTextNode(text));
+  tr.appendChild(c);
+}
+dash.draw('tb-lat', (tb) => {
+  tb.replaceChildren();
+  const d = dash.data('lat');
+  if (d.status !== 'ok') return;
+  ORDER.map((k) => d.data.find((r) => r.loai === k)).filter(Boolean).forEach((r) => {
+    const tr = document.createElement('tr');
+    tr.dataset.key = r.loai;
+    td(tr, r.ten, col(r.loai));
+    td(tr, F.int(+r.n));
+    ['mean', 'median', 'p95', 'p99', 'min', 'max'].forEach((f) => td(tr, F.ms(+r[f])));
+    tb.appendChild(tr);
+  });
+});
+dash.draw('tb-load', (tb) => {
+  tb.replaceChildren();
+  const d = dash.data('load');
+  if (d.status !== 'ok') return;
+  [...d.data].sort((a, b) => a.concurrency - b.concurrency || ORDER.indexOf(a.loai) - ORDER.indexOf(b.loai)).forEach((r) => {
+    const tr = document.createElement('tr');
+    tr.dataset.key = encodeURIComponent(r.loai) + ',' + encodeURIComponent(r.concurrency);
+    td(tr, SHORT[r.loai] || r.loai, col(r.loai));
+    td(tr, F.int(+r.concurrency));
+    td(tr, F.int(+r.requests));
+    td(tr, F.int(+r.errors));
+    td(tr, F.rps(+r.rps));
+    ['p50', 'p95', 'p99'].forEach((f) => td(tr, F.ms(+r[f])));
+    tb.appendChild(tr);
+  });
+});
+</script>
+
+</div>
+</body>
+</html>

@@ -56,6 +56,18 @@ python scripts/Benchmark/plot.py scripts/Benchmark/results/2026-10-25-chinh-thuc
 Chỉ đọc file kết quả, không cần API. Sinh ra `charts/01…05-*.png` (trung vị + p95, phân bố,
 theo lượt đo, tải đồng thời, stampede) và `summary.md` (bảng số liệu dán thẳng vào báo cáo).
 
+## Dashboard HTML
+
+```powershell
+python scripts/Benchmark/dashboard.py scripts/Benchmark/results/2026-10-25-chinh-thuc
+```
+
+Sinh `dashboard.html` trong thư mục kết quả: một file tự chứa số liệu, mở thẳng bằng trình
+duyệt (cần mạng để tải d3 từ cdnjs). Có chỉ số chính, biểu đồ có tooltip khi rê chuột và bảng
+số liệu; tự theo giao diện sáng/tối. Giao diện nằm ở `dashboard_template.html`.
+
+Muốn đo trực tiếp có Redis / không Redis trên một bài bất kỳ thì dùng trang `/benchmark` của web.
+
 ## An toàn dữ liệu
 
 Script chỉ chạy `DEL post:{id}` cho đúng bài đang đo, không `FLUSH`, `KEYS` hay `SCAN`.
